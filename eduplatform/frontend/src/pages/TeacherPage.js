@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import Sidebar from '../components/Layout/Sidebar';
 import TeacherDashboard from '../components/Dashboard/TeacherDashboard';
 import TestCreator from '../components/Tests/TestCreator';
-import TestList from '../components/Tests/TestList';
+import TeacherTestList from '../components/Tests/TeacherTestList';
 import TestResults from '../components/Tests/TestResults';
 
 const TeacherPage = () => {
@@ -15,12 +15,13 @@ const TeacherPage = () => {
       case 'create-test':
         return <TestCreator />;
       case 'my-tests':
-        return <TestList userType="teacher" />;
+        return <TeacherTestList />;
       case 'students':
         return (
           <div className="text-center py-12">
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Students Management</h3>
-            <p className="text-gray-600">This feature will be available in the next update</p>
+            <p className="text-gray-600 mb-4">View student performance and test results</p>
+            <p className="text-sm text-gray-500">Students access tests directly using test codes</p>
           </div>
         );
       case 'results':
