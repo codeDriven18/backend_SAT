@@ -24,8 +24,13 @@ INSTALLED_APPS = [
     'rest_framework',
 
     # Your apps
+    # 'apps.users',
+    # 'apps.tests',   # uncomment only if you actually create this app
+    
+    'apps.tests',
     'apps.users',
-    'apps.tests',   # uncomment only if you actually create this app
+    'apps.analytics',
+
 ]
 
 

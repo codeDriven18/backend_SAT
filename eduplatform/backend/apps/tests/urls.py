@@ -1,17 +1,22 @@
 from django.urls import path
 from .views import (
-    TestListCreateView, TestDetailView, TestAssignView,
-    AssignedTestsView, TestAttemptCreateView, TestAttemptListView,
-    TestAttemptDetailView, StudentTestsView
+    TestGroupListCreateView, TestGroupDetailView, AccessTestByCodeView,
+    StartTestAttemptView, SubmitTestAttemptView, StudentTestAttemptsView,
+    TestResultDetailView, TeacherTestStatsView
 )
 
 urlpatterns = [
-    path('', TestListCreateView.as_view(), name='test-list-create'),
-    path('<int:pk>/', TestDetailView.as_view(), name='test-detail'),
-    path('assign/', TestAssignView.as_view(), name='test-assign'),
-    path('assignments/', AssignedTestsView.as_view(), name='assigned-tests'),
-    path('attempts/', TestAttemptListView.as_view(), name='test-attempts'),
-    path('attempts/create/', TestAttemptCreateView.as_view(), name='test-attempt-create'),
-    path('attempts/<int:pk>/', TestAttemptDetailView.as_view(), name='test-attempt-detail'),
-    path('student-tests/', StudentTestsView.as_view(), name='student-tests'),
+    # Teacher/Admin test management
+    path('', TestGroupListCreateView.as_view(), name='testgroup-list-create'),
+    path('<int:pk>/', TestGroupDetailView.as_view(), name='testgroup-detail'),
+    path('<int:test_group_id>/stats/', TeacherTestStatsView.as_view(), name='test-stats'),
+    
+    # Student test access
+    path('access-by-code/', AccessTestByCodeView.as_view(), name='access-test-by-code'),
+    path('start-attempt/', StartTestAttemptView.as_view(), name='start-test-attempt'),
+    path('submit-attempt/', SubmitTestAttemptView.as_view(), name='submit-test-attempt'),
+    
+    # Test results
+    path('attempts/', StudentTestAttemptsView.as_view(), name='test-attempts'),
+    path('results/<int:pk>/', TestResultDetailView.as_view(), name='test-result-detail'),
 ]
