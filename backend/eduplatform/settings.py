@@ -137,7 +137,8 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3001",  # Teacher frontend
     "http://127.0.0.1:3000",
     "http://127.0.0.1:3001",
-    "https://backend-sato.onrender.com/"
+    'https://backend-sato.onrender.com',
+    'http://backend-sato.onrender.com',
 ]
 
 CORS_ALLOW_CREDENTIALS = True
