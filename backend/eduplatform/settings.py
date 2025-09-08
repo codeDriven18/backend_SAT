@@ -132,6 +132,9 @@ SIMPLE_JWT = {
 }
 
 # CORS settings
+
+# ALLOWED_HOSTS = ['localhost', '127.0.0.1', ]
+
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",  # Student frontend
     "http://localhost:3001",  # Teacher frontend
@@ -139,6 +142,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:3001",
     'https://backend-sato.onrender.com',
     'http://backend-sato.onrender.com',
+    'backend-sato.onrender.com'
 ]
 
 CORS_ALLOW_CREDENTIALS = True
