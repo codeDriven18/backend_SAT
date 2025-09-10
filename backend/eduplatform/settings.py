@@ -83,10 +83,10 @@ WSGI_APPLICATION = 'eduplatform.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'YOUR_DB_NAME',
-        'USER': 'YOUR_USERNAME',
-        'PASSWORD': 'YOUR_PASSWORD',
-        'HOST': 'dpg-d30ljq8gjchc73f0h530-a.render.com',
+        'NAME': 'postgresql_e4kf',
+        'USER': 'feruzbek',
+        'PASSWORD': 'qLrAuVedJVtNozZjrTBOgjdMwnnR0cjc',
+        'HOST': 'dpg-d30ljq8gjchc73f0h530-a.oregon-postgres.render.com',
         'PORT': '5432',
     }
 }
