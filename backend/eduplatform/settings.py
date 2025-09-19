@@ -174,6 +174,8 @@ DEBUG = config('DEBUG', default=True, cast=bool)
 
 # ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0']
 CORS_ALLOWED_ORIGINS = [
+    'localhost', '127.0.0.1', '0.0.0.0',
+    'https://backend-sato.onrender.com',
     "http://localhost:3000",
     "http://localhost:3001",
     "http://127.0.0.1:3000",
