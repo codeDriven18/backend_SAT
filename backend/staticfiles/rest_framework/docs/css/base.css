@@ -86,7 +86,7 @@ pre.highlight code {
   padding-left: 10px;
   padding-right: 10px;
   vertical-align: middle;
-  float: right;
+  /* float: right; */
 }
 
 .sidebar .menu-list ul .active,
