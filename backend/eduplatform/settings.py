@@ -91,7 +91,13 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = '/static/'
-STATICFILES_DIRS = [BASE_DIR / "student-frontend" / "dist" / "assets"]
+
+# STATICFILES_DIRS = [BASE_DIR / "student-frontend" / "dist" / "assets"]
+STATICFILES_DIRS = [
+    BASE_DIR.parent / "student-frontend" / "dist" / "assets"
+]
+
+
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
 MEDIA_URL = '/media/'
