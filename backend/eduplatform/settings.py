@@ -98,11 +98,12 @@ STATIC_URL = '/static/'
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 STATICFILES_DIRS = [
-    BASE_DIR.parent / "student-frontend" / "dist" / "assets"
+    BASE_DIR / "student-frontend/dist",
+    BASE_DIR / "teacher-frontend/dist",
 ]
 
 
-STATIC_ROOT = BASE_DIR / "staticfiles"
+STATIC_ROOT = BASE_DIR / "staticfiles"  
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
