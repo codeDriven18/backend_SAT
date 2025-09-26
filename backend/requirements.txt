@@ -18,3 +18,4 @@ python-decouple
 drf-spectacular
 dj-database-url
 psycopg2-binary
+whitenoise
