@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     'drf_spectacular',
 ]
 
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -45,6 +46,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "whitenoise.middleware.WhiteNoiseMiddleware",
 ]
 
 ROOT_URLCONF = 'eduplatform.urls'
@@ -93,6 +95,8 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 # STATICFILES_DIRS = [BASE_DIR / "student-frontend" / "dist" / "assets"]
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
 STATICFILES_DIRS = [
     BASE_DIR.parent / "student-frontend" / "dist" / "assets"
 ]
