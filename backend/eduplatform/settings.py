@@ -56,8 +56,8 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
-            BASE_DIR.parent / "student-frontend" / "dist",
-            BASE_DIR.parent / "teacher-frontend" / "dist",
+            BASE_DIR / "student-frontend" / "dist",
+            BASE_DIR / "teacher-frontend" / "dist",
         ],
         'APP_DIRS': True,
         'OPTIONS': {
@@ -101,8 +101,8 @@ STATIC_URL = '/static/'
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 STATICFILES_DIRS = [
-    settings.BASE_DIR.parent / "student-frontend" / "dist",
-    settings.BASE_DIR.parent / "teacher-frontend" / "dist",
+    BASE_DIR / "student-frontend" / "dist" / "assets",
+    BASE_DIR / "teacher-frontend" / "dist" / "assets",
 ]
 
 STATIC_ROOT = BASE_DIR / "staticfiles"  
