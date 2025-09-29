@@ -59,6 +59,7 @@ TEMPLATES = [
             BASE_DIR / "student-frontend" / "dist",
             BASE_DIR / "teacher-frontend" / "dist",
         ],
+
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [

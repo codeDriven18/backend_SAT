@@ -17,6 +17,11 @@ urlpatterns = [
     path('api/analytics/', include('apps.analytics.urls')),
 ]
 
+urlpatterns = [
+    path("student/", TemplateView.as_view(template_name="index.html"), name="student-index"),
+    path("teacher/", TemplateView.as_view(template_name="index.html"), name="teacher-index"),
+]
+
 # Serve student frontend
 urlpatterns += [
     re_path(r'^student.*$', TemplateView.as_view(template_name="student-index.html")),
@@ -36,4 +41,7 @@ if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 
+
+# from django.views.generic import TemplateView
+# from django.urls import path
 
