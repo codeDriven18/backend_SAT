@@ -1,10 +1,13 @@
 # eduplatform/urls.py
 from django.conf import settings
 from django.contrib import admin
+from django.shortcuts import render
 from django.urls import path, include, re_path
 from django.views.generic import TemplateView
 # from streamlit import status
 from django.conf.urls.static import static
+
+from backend.apps.analytics import views
 
 
 urlpatterns = [
@@ -17,11 +20,16 @@ urlpatterns = [
     path('api/analytics/', include('apps.analytics.urls')),
 ]
 
-urlpatterns = [
-    path("student/", TemplateView.as_view(template_name="index.html"), name="student-index"),
-    path("teacher/", TemplateView.as_view(template_name="index.html"), name="teacher-index"),
-]
+def student_view(request):
+    return render(request, "student-index.html")
 
+def teacher_view(request):
+    return render(request, "teacher-index.html")
+
+urlpatterns = [
+    path("", views.student_view, name="student"),
+    path("teacher/", views.teacher_view, name="teacher"),
+]
 # Serve student frontend
 urlpatterns += [
     re_path(r'^student.*$', TemplateView.as_view(template_name="student-index.html")),
