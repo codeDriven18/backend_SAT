@@ -3,12 +3,12 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-"scripts": {
-  "dev": "vite --port 3000",
-  "build": "vite build && Rename-Item dist/index.html student-index.html",
-  "lint": "eslint .",
-  "preview": "vite preview --port 3000"
-},
+  "scripts": {
+    "dev": "vite --port 3001",
+    "build": "vite build",
+    "lint": "eslint .",
+    "preview": "vite preview -- port 3001"
+  },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.13",
     "axios": "^1.11.0",
