@@ -54,9 +54,10 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
-            BASE_DIR / "student-frontend" / "dist",
-            BASE_DIR / "teacher-frontend" / "dist"
+            "/opt/render/project/src/student-frontend/dist",
+            "/opt/render/project/src/teacher-frontend/dist",
         ],
+
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
