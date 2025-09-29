@@ -24,7 +24,6 @@ INSTALLED_APPS = [
     'drf_spectacular',
 ]
 
-
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -96,24 +95,18 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = '/static/'
-
-# STATICFILES_DIRS = [BASE_DIR / "student-frontend" / "dist" / "assets"]
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
-
 STATICFILES_DIRS = [
-    BASE_DIR / "student-frontend/dist",
-    BASE_DIR / "teacher-frontend/dist",
+    BASE_DIR / "student-frontend" / "dist",
+    BASE_DIR / "teacher-frontend" / "dist",
 ]
-
-
-STATIC_ROOT = BASE_DIR / "staticfiles"  
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Add this to your REST_FRAMEWORK section
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
@@ -128,11 +121,9 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
     'DEFAULT_RENDERER_CLASSES': [
-        'rest_framework.renderers.JSONRenderer',  # Only JSON for API
-        # 'rest_framework.renderers.BrowsableAPIRenderer',  # optional for dev
+        'rest_framework.renderers.JSONRenderer',  # JSON only, no DRF HTML UI
     ],
 }
-
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
