@@ -3,7 +3,6 @@ from pathlib import Path
 from datetime import timedelta
 from decouple import config
 import dj_database_url
-from django.conf import settings
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -54,23 +53,19 @@ ROOT_URLCONF = 'eduplatform.urls'
 
 TEMPLATES = [
     {
-        "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [
-            BASE_DIR / "student-frontend" / "dist",
-            BASE_DIR / "teacher-frontend" / "dist",
-        ],
-        "APP_DIRS": True,
-        "OPTIONS": {
-            "context_processors": [
-                "django.template.context_processors.debug",
-                "django.template.context_processors.request",
-                "django.contrib.auth.context_processors.auth",
-                "django.contrib.messages.context_processors.messages",
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [BASE_DIR / "student-frontend" / "dist"],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
             ],
         },
     },
 ]
-
 
 WSGI_APPLICATION = 'eduplatform.wsgi.application'
 
@@ -99,12 +94,14 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
+# STATICFILES_DIRS = [BASE_DIR / "student-frontend" / "dist" / "assets"]
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 STATICFILES_DIRS = [
-    BASE_DIR / "student-frontend" / "dist" / "assets",
-    BASE_DIR / "teacher-frontend" / "dist" / "assets",
+    BASE_DIR / "student-frontend/dist",
+    BASE_DIR / "teacher-frontend/dist",
 ]
+
 
 STATIC_ROOT = BASE_DIR / "staticfiles"  
 
@@ -149,24 +146,12 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3001",
     "http://127.0.0.1:3000",
     "http://127.0.0.1:3001",
-    "https://student-frontend.onrender.com",
-    "https://teacher-frontend.onrender.com",
+    'https://backend-sato.onrender.com',
+    'http://backend-sato.onrender.com',
 ]
-
 
 CORS_ALLOW_CREDENTIALS = True
 AUTH_USER_MODEL = 'users.User'
-
-CSRF_TRUSTED_ORIGINS = [
-    "https://backend-sato.onrender.com",
-]
-
-SESSION_COOKIE_SAMESITE = "None"
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SAMESITE = "None"
-CSRF_COOKIE_SECURE = True
-
-
 
 SPECTACULAR_SETTINGS = {
     'TITLE': 'EduPlatform API',
