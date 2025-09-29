@@ -15,17 +15,16 @@ urlpatterns = [
     # Authentication
     path('api/auth/', include('apps.users.urls')),
 
-    # Separate domains for different user types
+    # Student & Teacher API endpoints
     path('api/student/', include('apps.tests.student_urls')),
     path('api/teacher/', include('apps.tests.teacher_urls')),
-
-    # Analytics
     path('api/analytics/', include('apps.analytics.urls')),
 
-    # Frontends
-    re_path(r'^student/.*$', TemplateView.as_view(template_name="student-index.html"), name='student-frontend'),
-    re_path(r'^teacher/.*$', TemplateView.as_view(template_name="teacher-index.html"), name='teacher-frontend'),
+    # Frontend routes (catch-all for SPA)
+    re_path(r'^student(?:/.*)?$', TemplateView.as_view(template_name="student-index.html"), name='student-frontend'),
+    re_path(r'^teacher(?:/.*)?$', TemplateView.as_view(template_name="teacher-index.html"), name='teacher-frontend'),
 ]
 
+# Serve media in development
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
