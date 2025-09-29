@@ -21,8 +21,8 @@ urlpatterns = [
     path('api/analytics/', include('apps.analytics.urls')),
 
     # Frontend routes (catch-all for SPA)
-    re_path(r'^student(?:/.*)?$', TemplateView.as_view(template_name="student-index.html"), name='student-frontend'),
-    re_path(r'^teacher(?:/.*)?$', TemplateView.as_view(template_name="teacher-index.html"), name='teacher-frontend'),
+re_path(r'^student/.*$', TemplateView.as_view(template_name="index.html"), name='student-frontend'),
+re_path(r'^teacher/.*$', TemplateView.as_view(template_name="index.html"), name='teacher-frontend'),
 ]
 
 # Serve media in development
