@@ -55,7 +55,10 @@ ROOT_URLCONF = 'eduplatform.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / "student-frontend" / "dist"],
+        'DIRS': [
+            BASE_DIR.parent / "student-frontend" / "dist",
+            BASE_DIR.parent / "teacher-frontend" / "dist",
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
