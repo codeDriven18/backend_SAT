@@ -3,16 +3,17 @@ from pathlib import Path
 from datetime import timedelta
 from decouple import config
 
+import dj_database_url
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-8s2k&y^p#x1r*9u_3l%4kz!q0o^a7b3d')
 
 DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0']
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,0.0.0.0').split(',')
 
 INSTALLED_APPS = [
-    # Django defaults
     'apps.notifications',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -20,20 +21,13 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-
-    # Third-party apps
     'rest_framework',
-
-    # Your apps
-    # 'apps.users',
-    # 'apps.tests',   # uncomment only if you actually create this app
-    
+    'django_filters',
+    'drf_spectacular',
+    'corsheaders',
     'apps.tests',
     'apps.users',
     'apps.analytics',
-
-    'django_filters',  # Add this
-    'drf_spectacular',  # Add this for Swagger
 ]
 
 
@@ -68,14 +62,13 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'eduplatform.wsgi.application'
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
 
-DATABASES = {
+if os.getenv('RENDER'):
+    DATABASES = {
+        'default': dj_database_url.config(conn_max_age=600, ssl_require=True)
+    }
+else:
+    DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'postgresql_e4kf',
@@ -83,6 +76,9 @@ DATABASES = {
         'PASSWORD': 'qLrAuVedJVtNozZjrTBOgjdMwnnR0cjc',
         'HOST': 'dpg-d30ljq8gjchc73f0h530-a.oregon-postgres.render.com',
         'PORT': '5432',
+        'OPTIONS': {
+            'sslmode': 'require',
+        },
     }
 }
 
@@ -110,6 +106,9 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+]
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
@@ -140,12 +139,7 @@ SIMPLE_JWT = {
 }
 
 # CORS settings
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",  # Student frontend
-    "http://localhost:3001",  # Teacher frontend
-    "http://127.0.0.1:3000",
-    "http://127.0.0.1:3001",
-]
+CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='http://localhost:3000,http://localhost:3001,http://127.0.0.1:3000,http://127.0.0.1:3001').split(',')
 
 CORS_ALLOW_CREDENTIALS = True
 

@@ -27,22 +27,45 @@ class TestGroup(models.Model):
 
 class TestSection(models.Model):
     name = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+    time_limit = models.IntegerField(null=True, blank=True, help_text="Time limit in minutes")
+    order = models.PositiveIntegerField(default=0)
     test_group = models.ForeignKey(
         "TestGroup",
         on_delete=models.CASCADE,
         related_name="sections",
         null=True, blank=True
     )
+    
+    class Meta:
+        ordering = ['order']
+    
+    def __str__(self):
+        return f"{self.name} ({self.test_group.title if self.test_group else 'No Group'})"
 class Question(models.Model):
-    text = models.TextField()
+    QUESTION_TYPES = [
+        ('mcq', 'Multiple Choice'),
+        ('math_free', 'Math Free Answer'),
+    ]
+    
+    text = models.TextField()  # For backward compatibility
+    question_text = models.TextField(blank=True, null=True)
+    passage_text = models.TextField(blank=True, null=True)
     image = models.ImageField(upload_to="questions/", null=True, blank=True)
     test_group = models.ForeignKey("TestGroup", on_delete=models.CASCADE, null=True, blank=True)
     marks = models.IntegerField(default=1)
     order = models.PositiveIntegerField(default=0)
     section = models.ForeignKey("TestSection", on_delete=models.CASCADE, related_name="questions", null=True, blank=True)
+    question_type = models.CharField(max_length=20, choices=QUESTION_TYPES, default='mcq')
+    correct_answers = models.JSONField(default=list, blank=True)  # For math questions
+    
+    # Legacy fields for compatibility
+    answer = models.CharField(max_length=1, blank=True, null=True)  # For backward compatibility
+    options = models.JSONField(default=dict, blank=True)  # For backward compatibility
 
     def __str__(self):
-        return self.text[:50]
+        question_text = self.question_text or self.text
+        return question_text[:50] if question_text else "Untitled Question"
 
 class Choice(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='choices')
