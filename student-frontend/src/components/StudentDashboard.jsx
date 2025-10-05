@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   BookOpen,
@@ -28,6 +28,9 @@ import useStudentStore from '../store/useStudentStore';
 const StudentDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [searchQuery, setSearchQuery] = useState('');
+  const [notifications, setNotifications] = useState([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const notificationRef = useRef(null);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   
@@ -44,6 +47,134 @@ const StudentDashboard = () => {
     loadAttempts();
   }, [loadAssignedTests, loadAttempts]);
 
+  // Generate dynamic notifications based on student data
+  useEffect(() => {
+    const generateNotifications = () => {
+      const newNotifications = [];
+      const now = new Date();
+
+      // Check for new assigned tests
+      assignedTests.forEach(test => {
+        const testDate = new Date(test.created_at || test.assigned_at);
+        const daysSinceAssigned = Math.floor((now - testDate) / (1000 * 60 * 60 * 24));
+        
+        if (daysSinceAssigned <= 1) {
+          newNotifications.push({
+            id: `new-test-${test.id}`,
+            type: 'new_test',
+            title: 'New Test Assigned',
+            message: `"${test.title}" has been assigned to you`,
+            timestamp: testDate,
+            unread: true,
+            action: () => setActiveTab('tests')
+          });
+        }
+      });
+
+      // Check for test deadlines
+      assignedTests.forEach(test => {
+        if (test.deadline) {
+          const deadline = new Date(test.deadline);
+          const daysUntilDeadline = Math.floor((deadline - now) / (1000 * 60 * 60 * 24));
+          
+          if (daysUntilDeadline <= 3 && daysUntilDeadline >= 0) {
+            newNotifications.push({
+              id: `deadline-${test.id}`,
+              type: 'deadline',
+              title: 'Test Deadline Approaching',
+              message: `"${test.title}" is due in ${daysUntilDeadline === 0 ? 'today' : `${daysUntilDeadline} day${daysUntilDeadline > 1 ? 's' : ''}`}`,
+              timestamp: now,
+              unread: true,
+              action: () => setActiveTab('tests')
+            });
+          }
+        }
+      });
+
+      // Check for completed tests that need review
+      attempts.forEach(attempt => {
+        if (attempt.status === 'completed' && attempt.percentage !== undefined) {
+          const completedDate = new Date(attempt.completed_at || attempt.started_at);
+          const daysSinceCompleted = Math.floor((now - completedDate) / (1000 * 60 * 60 * 24));
+          
+          if (daysSinceCompleted <= 1) {
+            newNotifications.push({
+              id: `completed-${attempt.id}`,
+              type: 'completed',
+              title: 'Test Completed',
+              message: `You scored ${attempt.percentage}% on "${attempt.test_title}"`,
+              timestamp: completedDate,
+              unread: true,
+              action: () => setActiveTab('results')
+            });
+          }
+        }
+      });
+
+      // Check for performance achievements
+      const recentAttempts = attempts.filter(attempt => {
+        const attemptDate = new Date(attempt.started_at);
+        const daysSinceAttempt = Math.floor((now - attemptDate) / (1000 * 60 * 60 * 24));
+        return daysSinceAttempt <= 7 && attempt.status === 'completed';
+      });
+
+      if (recentAttempts.length > 0) {
+        const highScores = recentAttempts.filter(attempt => attempt.percentage >= 90);
+        if (highScores.length > 0) {
+          newNotifications.push({
+            id: 'high-score',
+            type: 'achievement',
+            title: 'Excellent Performance!',
+            message: `You achieved ${highScores.length} high score${highScores.length > 1 ? 's' : ''} (90%+) this week`,
+            timestamp: now,
+            unread: true,
+            action: () => setActiveTab('performance')
+          });
+        }
+      }
+
+      // Check for improvement opportunities
+      const lowScores = attempts.filter(attempt => 
+        attempt.status === 'completed' && attempt.percentage < 70
+      );
+      
+      if (lowScores.length >= 2) {
+        newNotifications.push({
+          id: 'improvement',
+          type: 'improvement',
+          title: 'Practice More',
+          message: 'Consider reviewing your weak areas to improve your scores',
+          timestamp: now,
+          unread: true,
+          action: () => setActiveTab('performance')
+        });
+      }
+
+      setNotifications(newNotifications);
+    };
+
+    if (!dashboardLoading) {
+      generateNotifications();
+    }
+  }, [assignedTests, attempts, dashboardLoading]);
+
+  // Close notification dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+        setShowNotifications(false);
+      }
+    };
+
+    if (showNotifications) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showNotifications]);
+
   const handleLogout = () => {
     logout();
     navigate('/login');
@@ -51,6 +182,47 @@ const StudentDashboard = () => {
 
   const handleStartTest = (testId) => {
     navigate(`/test/${testId}`);
+  };
+
+  const handleNotificationClick = (notification) => {
+    // Mark as read
+    setNotifications(prev => 
+      prev.map(n => n.id === notification.id ? { ...n, unread: false } : n)
+    );
+    
+    // Execute notification action
+    if (notification.action) {
+      notification.action();
+    }
+    
+    // Close dropdown
+    setShowNotifications(false);
+  };
+
+  const markAllAsRead = () => {
+    setNotifications(prev => prev.map(n => ({ ...n, unread: false })));
+  };
+
+  const getNotificationIcon = (type) => {
+    switch (type) {
+      case 'new_test': return <FileText className="w-4 h-4" />;
+      case 'deadline': return <AlertCircle className="w-4 h-4" />;
+      case 'completed': return <CheckCircle className="w-4 h-4" />;
+      case 'achievement': return <Award className="w-4 h-4" />;
+      case 'improvement': return <TrendingUp className="w-4 h-4" />;
+      default: return <Bell className="w-4 h-4" />;
+    }
+  };
+
+  const getNotificationColor = (type) => {
+    switch (type) {
+      case 'new_test': return 'text-blue-600 bg-blue-50';
+      case 'deadline': return 'text-red-600 bg-red-50';
+      case 'completed': return 'text-green-600 bg-green-50';
+      case 'achievement': return 'text-yellow-600 bg-yellow-50';
+      case 'improvement': return 'text-purple-600 bg-purple-50';
+      default: return 'text-gray-600 bg-gray-50';
+    }
   };
 
   // Calculate comprehensive stats
@@ -118,10 +290,68 @@ const StudentDashboard = () => {
     </div>
   );
 
+  const NotificationDropdown = () => (
+    <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+      <div className="p-4 border-b border-gray-100">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold text-gray-900">Notifications</h3>
+          {notifications.some(n => n.unread) && (
+            <button
+              onClick={markAllAsRead}
+              className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+            >
+              Mark all as read
+            </button>
+          )}
+        </div>
+      </div>
+      
+      <div className="max-h-96 overflow-y-auto">
+        {notifications.length > 0 ? (
+          notifications.map((notification) => (
+            <div
+              key={notification.id}
+              onClick={() => handleNotificationClick(notification)}
+              className={`p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors ${
+                notification.unread ? 'bg-blue-50' : ''
+              }`}
+            >
+              <div className="flex items-start space-x-3">
+                <div className={`p-2 rounded-full ${getNotificationColor(notification.type)}`}>
+                  {getNotificationIcon(notification.type)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium text-gray-900">{notification.title}</p>
+                    {notification.unread && (
+                      <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {formatDate(notification.timestamp)}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="p-8 text-center">
+            <Bell className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+            <p className="text-gray-500">No notifications yet</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
   const Sidebar = () => (
     <div className="w-64 bg-white border-r border-gray-200 h-screen overflow-y-auto">
       <div className="p-6">
-        <div className="flex items-center space-x-2">
+        <div 
+          className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors"
+          onClick={() => setActiveTab('overview')}
+        >
           <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
             <span className="text-white font-bold text-sm">$4$</span>
           </div>
@@ -138,6 +368,7 @@ const StudentDashboard = () => {
           { id: 'tests', label: 'Assigned Tests', icon: FileText },
           { id: 'results', label: 'Test Results', icon: TrendingUp },
           { id: 'performance', label: 'Performance', icon: Target },
+          { id: 'profile', label: 'Profile', icon: User },
         ].map((item) => (
           <button
             key={item.id}
@@ -572,6 +803,318 @@ const StudentDashboard = () => {
     );
   };
 
+  const ProfileContent = () => {
+    const [isEditing, setIsEditing] = useState(false);
+    const [profileData, setProfileData] = useState({
+      firstName: user?.first_name || '',
+      lastName: user?.last_name || '',
+      email: user?.email || '',
+      username: user?.username || '',
+      phone: user?.phone || '',
+      dateOfBirth: user?.date_of_birth || '',
+      school: user?.school || '',
+      grade: user?.grade || '',
+      bio: user?.bio || ''
+    });
+
+    const handleInputChange = (field, value) => {
+      setProfileData(prev => ({ ...prev, [field]: value }));
+    };
+
+    const handleSaveProfile = () => {
+      // Here you would typically make an API call to update the profile
+      console.log('Saving profile:', profileData);
+      setIsEditing(false);
+      // You could add a success notification here
+    };
+
+    const handleCancelEdit = () => {
+      setProfileData({
+        firstName: user?.first_name || '',
+        lastName: user?.last_name || '',
+        email: user?.email || '',
+        username: user?.username || '',
+        phone: user?.phone || '',
+        dateOfBirth: user?.date_of_birth || '',
+        school: user?.school || '',
+        grade: user?.grade || '',
+        bio: user?.bio || ''
+      });
+      setIsEditing(false);
+    };
+
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">Profile</h2>
+            <p className="text-gray-600">Manage your account information and preferences</p>
+          </div>
+          <div className="flex space-x-3">
+            {isEditing ? (
+              <>
+                <button
+                  onClick={handleCancelEdit}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveProfile}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Save Changes
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => setIsEditing(true)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Edit Profile
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Profile Overview */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-xl border border-gray-100 p-6">
+              <div className="text-center">
+                <div className="w-24 h-24 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-white font-bold text-2xl">
+                    {user?.first_name?.[0] || user?.username?.[0] || 'S'}
+                  </span>
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900">
+                  {user?.first_name || user?.username || 'Student'}
+                </h3>
+                <p className="text-gray-600">{user?.email}</p>
+                <div className="mt-4 space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Member since:</span>
+                    <span className="font-medium">
+                      {user?.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Tests completed:</span>
+                    <span className="font-medium">{completedTests}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Average score:</span>
+                    <span className="font-medium">{averageScore}%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Stats */}
+            <div className="bg-white rounded-xl border border-gray-100 p-6 mt-6">
+              <h4 className="text-lg font-semibold text-gray-900 mb-4">Quick Stats</h4>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">Total Tests</span>
+                  <span className="font-medium">{assignedTests.length}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">Completed</span>
+                  <span className="font-medium text-green-600">{completedTests}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">In Progress</span>
+                  <span className="font-medium text-blue-600">{inProgressTests}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">Success Rate</span>
+                  <span className="font-medium text-purple-600">
+                    {completedTests > 0 ? Math.round((attempts.filter(a => (a.percentage || 0) >= 70).length / completedTests) * 100) : 0}%
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Profile Form */}
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-xl border border-gray-100 p-6">
+              <h4 className="text-lg font-semibold text-gray-900 mb-6">Personal Information</h4>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={profileData.firstName}
+                      onChange={(e) => handleInputChange('firstName', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  ) : (
+                    <p className="text-gray-900">{profileData.firstName || 'Not provided'}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={profileData.lastName}
+                      onChange={(e) => handleInputChange('lastName', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  ) : (
+                    <p className="text-gray-900">{profileData.lastName || 'Not provided'}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                  {isEditing ? (
+                    <input
+                      type="email"
+                      value={profileData.email}
+                      onChange={(e) => handleInputChange('email', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  ) : (
+                    <p className="text-gray-900">{profileData.email}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Username</label>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={profileData.username}
+                      onChange={(e) => handleInputChange('username', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  ) : (
+                    <p className="text-gray-900">{profileData.username}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+                  {isEditing ? (
+                    <input
+                      type="tel"
+                      value={profileData.phone}
+                      onChange={(e) => handleInputChange('phone', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  ) : (
+                    <p className="text-gray-900">{profileData.phone || 'Not provided'}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Date of Birth</label>
+                  {isEditing ? (
+                    <input
+                      type="date"
+                      value={profileData.dateOfBirth}
+                      onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  ) : (
+                    <p className="text-gray-900">{profileData.dateOfBirth || 'Not provided'}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">School</label>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={profileData.school}
+                      onChange={(e) => handleInputChange('school', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  ) : (
+                    <p className="text-gray-900">{profileData.school || 'Not provided'}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Grade</label>
+                  {isEditing ? (
+                    <select
+                      value={profileData.grade}
+                      onChange={(e) => handleInputChange('grade', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="">Select Grade</option>
+                      <option value="9">9th Grade</option>
+                      <option value="10">10th Grade</option>
+                      <option value="11">11th Grade</option>
+                      <option value="12">12th Grade</option>
+                      <option value="college">College</option>
+                    </select>
+                  ) : (
+                    <p className="text-gray-900">{profileData.grade ? `${profileData.grade}th Grade` : 'Not provided'}</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Bio</label>
+                {isEditing ? (
+                  <textarea
+                    value={profileData.bio}
+                    onChange={(e) => handleInputChange('bio', e.target.value)}
+                    rows={4}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Tell us about yourself..."
+                  />
+                ) : (
+                  <p className="text-gray-900">{profileData.bio || 'No bio provided'}</p>
+                )}
+              </div>
+            </div>
+
+            {/* Recent Activity */}
+            <div className="bg-white rounded-xl border border-gray-100 p-6 mt-6">
+              <h4 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h4>
+              <div className="space-y-4">
+                {attempts.slice(0, 5).map((attempt) => (
+                  <div key={attempt.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <div className={`p-2 rounded-full ${getStatusColor(attempt.status)}`}>
+                        {attempt.status === 'completed' ? (
+                          <CheckCircle className="w-4 h-4" />
+                        ) : (
+                          <Clock className="w-4 h-4" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">{attempt.test_title}</p>
+                        <p className="text-sm text-gray-600">
+                          {attempt.status === 'completed' 
+                            ? `Completed with ${attempt.percentage}%`
+                            : `Status: ${attempt.status.replace('_', ' ')}`
+                          }
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-xs text-gray-500">{formatDate(attempt.started_at)}</span>
+                  </div>
+                ))}
+                {attempts.length === 0 && (
+                  <p className="text-gray-500 text-center py-4">No recent activity</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const renderContent = () => {
     switch (activeTab) {
       case 'overview':
@@ -582,6 +1125,8 @@ const StudentDashboard = () => {
         return <ResultsContent />;
       case 'performance':
         return <PerformanceContent />;
+      case 'profile':
+        return <ProfileContent />;
       default:
         return <OverviewContent />;
     }
@@ -605,15 +1150,30 @@ const StudentDashboard = () => {
               />
             </div>
             <div className="flex items-center space-x-4">
-              <button className="p-2 hover:bg-gray-100 rounded-lg relative">
-                <Bell className="w-5 h-5 text-gray-600" />
-                <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
-              </button>
-              <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+              <div className="relative" ref={notificationRef}>
+                <button 
+                  onClick={() => setShowNotifications(!showNotifications)}
+                  className="p-2 hover:bg-gray-100 rounded-lg relative"
+                >
+                  <Bell className="w-5 h-5 text-gray-600" />
+                  {notifications.some(n => n.unread) && (
+                    <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full flex items-center justify-center">
+                      <span className="text-xs text-white font-bold">
+                        {notifications.filter(n => n.unread).length > 9 ? '9+' : notifications.filter(n => n.unread).length}
+                      </span>
+                    </span>
+                  )}
+                </button>
+                {showNotifications && <NotificationDropdown />}
+              </div>
+              <button 
+                onClick={() => setActiveTab('profile')}
+                className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center hover:bg-blue-700 transition-colors cursor-pointer"
+              >
                 <span className="text-white font-medium text-sm">
                   {user?.first_name?.[0] || user?.username?.[0] || 'S'}
                 </span>
-              </div>
+              </button>
             </div>
           </div>
         </header>

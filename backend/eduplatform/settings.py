@@ -2,39 +2,40 @@ import os
 from pathlib import Path
 from datetime import timedelta
 from decouple import config
-import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-8s2k&y^p#x1r*9u_3l%4kz!q0o^a7b3d')
-DEBUG = config('DEBUG', default=False, cast=bool)
+
+DEBUG = config('DEBUG', default=True, cast=bool)
+
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0']
 
 INSTALLED_APPS = [
+    # Django defaults
+    'apps.notifications',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    # Third-party apps
     'rest_framework',
+
+    # Your apps
+    # 'apps.users',
+    # 'apps.tests',   # uncomment only if you actually create this app
+    
     'apps.tests',
     'apps.users',
     'apps.analytics',
-    'django_filters',
-    'drf_spectacular',
+
+    'django_filters',  # Add this
+    'drf_spectacular',  # Add this for Swagger
 ]
 
-LOGGING = {
-    "version": 1,
-    "disable_existing_loggers": False,
-    "handlers": {
-        "console": {"class": "logging.StreamHandler"},
-    },
-    "root": {
-        "handlers": ["console"],
-        "level": "DEBUG",
-    },
-}
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
@@ -45,7 +46,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    "whitenoise.middleware.WhiteNoiseMiddleware",
 ]
 
 ROOT_URLCONF = 'eduplatform.urls'
@@ -53,11 +53,7 @@ ROOT_URLCONF = 'eduplatform.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [
-            "/opt/render/project/src/student-frontend/dist",
-            "/opt/render/project/src/teacher-frontend/dist",
-        ],
-
+        'DIRS': [],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -74,20 +70,24 @@ WSGI_APPLICATION = 'eduplatform.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'postgresql_e4kf',
-        'USER': 'feruzbek',
-        'PASSWORD': 'qLrAuVedJVtNozZjrTBOgjdMwnnR0cjc',
-        'HOST': 'dpg-d30ljq8gjchc73f0h530-a.oregon-postgres.render.com',
-        'PORT': '5432',
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
 
 AUTH_PASSWORD_VALIDATORS = [
-    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
+    {
+        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+    },
 ]
 
 LANGUAGE_CODE = 'en-us'
@@ -96,58 +96,51 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = '/static/'
-STATICFILES_DIRS = [
-    BASE_DIR / "student-frontend" / "dist",
-    BASE_DIR / "teacher-frontend" / "dist",
-]
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
-STATIC_ROOT = BASE_DIR / "staticfiles"
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# REST Framework settings
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny',
+        'rest_framework.permissions.IsAuthenticated',
     ],
-    'DEFAULT_SCHEMA_CLASS': 'eduplatform.schema.CustomAutoSchema',
+    'DEFAULT_SCHEMA_CLASS': 'eduplatform.schema.CustomAutoSchema',  # Add this line
     'DEFAULT_FILTER_BACKENDS': [
         'django_filters.rest_framework.DjangoFilterBackend',
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 20,
-    'DEFAULT_RENDERER_CLASSES': [
-        'rest_framework.renderers.JSONRenderer',  # JSON only, no DRF HTML UI
-    ],
+    'PAGE_SIZE': 20
 }
 
+# JWT settings
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
     'ROTATE_REFRESH_TOKENS': True,
 }
 
-ALLOWED_HOSTS = [
-    'localhost', '127.0.0.1', '0.0.0.0', 'backend-sato.onrender.com'
-]
-
+# CORS settings
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://localhost:3001",
+    "http://localhost:3000",  # Student frontend
+    "http://localhost:3001",  # Teacher frontend
     "http://127.0.0.1:3000",
     "http://127.0.0.1:3001",
-    'https://backend-sato.onrender.com',
-    'http://backend-sato.onrender.com',
 ]
 
 CORS_ALLOW_CREDENTIALS = True
+
+
+# Custom user model
 AUTH_USER_MODEL = 'users.User'
 
+# Swagger settings
 SPECTACULAR_SETTINGS = {
     'TITLE': 'EduPlatform API',
     'DESCRIPTION': 'Test Management Platform API with separate endpoints for students and teachers',
@@ -167,3 +160,7 @@ SPECTACULAR_SETTINGS = {
         {'name': 'Teacher Analytics', 'description': 'Performance analytics and reporting'},
     ],
 }
+import os
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

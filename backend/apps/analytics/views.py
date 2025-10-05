@@ -24,9 +24,18 @@ class DashboardStatsView(APIView):
         return Response({'error': 'Invalid user type'}, status=400)
 
     def get_student_stats(self, user):
+#
+        student_groups = user.groups.all()  
+        assigned_tests = TestGroup.objects.filter(group__in=student_groups, is_active=True)
+
+        total_assigned = assigned_tests.count()
+        attempts = StudentTestAttempt.objects.filter(
+            student=user, test_group__in=assigned_tests, status='completed'
+        )
+#
         attempts = StudentTestAttempt.objects.filter(student=user, status='completed')
 
-        total_assigned = TestGroup.objects.filter(is_active=True).count()
+        # total_assigned = TestGroup.objects.filter(is_active=True).count()
         completed = attempts.count()
         pending = max(total_assigned - completed, 0)
 

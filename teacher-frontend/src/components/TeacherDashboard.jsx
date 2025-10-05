@@ -1,3 +1,4 @@
+import NotificationBell from './NotificationBell';
 import React, { useState, useEffect } from 'react';
 import { 
   Users, 
@@ -117,7 +118,10 @@ const TeacherDashboard = () => {
   const Sidebar = () => (
     <div className="w-64 bg-white border-r border-gray-200 h-screen overflow-y-auto">
       <div className="p-6">
-        <div className="flex items-center space-x-2">
+        <button 
+          onClick={() => setActiveTab('dashboard')}
+          className="flex items-center space-x-2 hover:bg-gray-50 p-2 rounded-lg transition-colors w-full text-left"
+        >
           <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center">
             <span className="text-white font-bold text-sm">$4$</span>
           </div>
@@ -125,7 +129,7 @@ const TeacherDashboard = () => {
             <h1 className="font-bold text-gray-900">4prep-SAT</h1>
             <p className="text-xs text-gray-500">College Prep Community</p>
           </div>
-        </div>
+        </button>
       </div>
 
       <nav className="px-4">
@@ -136,6 +140,7 @@ const TeacherDashboard = () => {
           { id: 'assignments', label: 'Assignments', icon: ClipboardList },
           { id: 'results', label: 'Results', icon: TrendingUp },
           { id: 'library', label: 'Test Library', icon: BookOpen },
+          { id: 'profile', label: 'Profile', icon: Settings },
         ].map((item) => (
           <button
             key={item.id}
@@ -515,6 +520,141 @@ const TeacherDashboard = () => {
 
   };
 
+  const ProfileContent = () => {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">Profile Settings</h2>
+            <p className="text-gray-600">Manage your account information and preferences</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Profile Information */}
+          <div className="bg-white rounded-xl border border-gray-100 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Personal Information</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                <input
+                  type="text"
+                  value={user?.first_name + ' ' + user?.last_name || ''}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                  readOnly
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input
+                  type="email"
+                  value={user?.email || ''}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                  readOnly
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">User Type</label>
+                <input
+                  type="text"
+                  value={user?.user_type || 'teacher'}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                  readOnly
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Account Statistics */}
+          <div className="bg-white rounded-xl border border-gray-100 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Account Statistics</h3>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <span className="text-sm font-medium text-gray-600">Total Groups</span>
+                <span className="text-lg font-bold text-emerald-600">{dashboardStats?.total_groups || 0}</span>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <span className="text-sm font-medium text-gray-600">Total Tests</span>
+                <span className="text-lg font-bold text-emerald-600">{dashboardStats?.total_tests || 0}</span>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <span className="text-sm font-medium text-gray-600">Total Students</span>
+                <span className="text-lg font-bold text-emerald-600">{dashboardStats?.total_students || 0}</span>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <span className="text-sm font-medium text-gray-600">Active Assignments</span>
+                <span className="text-lg font-bold text-emerald-600">{dashboardStats?.active_assignments || 0}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Account Actions */}
+          <div className="bg-white rounded-xl border border-gray-100 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Account Actions</h3>
+            <div className="space-y-3">
+              <button className="w-full text-left p-3 hover:bg-gray-50 rounded-lg border border-gray-200 transition-colors">
+                <div className="flex items-center space-x-3">
+                  <Settings className="w-5 h-5 text-gray-400" />
+                  <div>
+                    <p className="font-medium text-gray-900">Account Settings</p>
+                    <p className="text-sm text-gray-500">Update your account preferences</p>
+                  </div>
+                </div>
+              </button>
+              <button className="w-full text-left p-3 hover:bg-gray-50 rounded-lg border border-gray-200 transition-colors">
+                <div className="flex items-center space-x-3">
+                  <Bell className="w-5 h-5 text-gray-400" />
+                  <div>
+                    <p className="font-medium text-gray-900">Notification Preferences</p>
+                    <p className="text-sm text-gray-500">Manage your notification settings</p>
+                  </div>
+                </div>
+              </button>
+              <button 
+                onClick={logout}
+                className="w-full text-left p-3 hover:bg-red-50 rounded-lg border border-red-200 transition-colors"
+              >
+                <div className="flex items-center space-x-3">
+                  <LogOut className="w-5 h-5 text-red-400" />
+                  <div>
+                    <p className="font-medium text-red-900">Sign Out</p>
+                    <p className="text-sm text-red-500">Sign out of your account</p>
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          {/* Recent Activity */}
+          <div className="bg-white rounded-xl border border-gray-100 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
+            <div className="space-y-3">
+              {dashboardStats?.recent_attempts?.length > 0 ? (
+                dashboardStats.recent_attempts.slice(0, 3).map((attempt) => (
+                  <div key={attempt.id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                    <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-900">{attempt.student_name}</p>
+                      <p className="text-xs text-gray-500">{attempt.test_title}</p>
+                    </div>
+                    <span className="text-xs text-gray-400">
+                      {formatDate(attempt.started_at)}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-4 text-gray-500">
+                  <Clock className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+                  <p className="text-sm">No recent activity</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
@@ -527,6 +667,8 @@ const TeacherDashboard = () => {
         return <AssignmentsPage />;
       case 'library':
         return <LibraryPage/>;
+      case 'profile':
+        return <ProfileContent />;
       default:
         return <DashboardContent />;
     }
@@ -551,7 +693,7 @@ const TeacherDashboard = () => {
   return (
     <div className="flex h-screen bg-gray-50">
       <Sidebar />
-      
+
       <div className="flex-1 overflow-auto">
         <header className="bg-white border-b border-gray-200 px-6 py-4">
           <div className="flex items-center justify-between">
@@ -564,15 +706,15 @@ const TeacherDashboard = () => {
               />
             </div>
             <div className="flex items-center space-x-4">
-              <button className="p-2 hover:bg-gray-100 rounded-lg relative">
-                <Bell className="w-5 h-5 text-gray-600" />
-                <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
-              </button>
-              <div className="w-8 h-8 bg-emerald-600 rounded-full flex items-center justify-center">
+              <NotificationBell />
+              <button 
+                onClick={() => setActiveTab('profile')}
+                className="w-8 h-8 bg-emerald-600 rounded-full flex items-center justify-center hover:bg-emerald-700 transition-colors"
+              >
                 <span className="text-white font-medium text-sm">
                   {user?.first_name?.[0] || user?.username?.[0] || 'T'}
                 </span>
-              </div>
+              </button>
             </div>
           </div>
         </header>

@@ -74,7 +74,6 @@ class StudentDashboardViewSet(viewsets.ViewSet):
             return Response({'error': 'Only students can access this'}, 
                           status=status.HTTP_403_FORBIDDEN)
         
-        # Get tests assigned through groups
         assigned_tests = TestGroup.objects.filter(
             assignments__student_group__students=request.user,
             assignments__is_active=True,

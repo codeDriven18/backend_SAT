@@ -148,7 +148,8 @@ class TestLibraryViewSet(viewsets.ReadOnlyModelViewSet):
         return (
             TestGroup.objects
             .filter(is_active=True)
-            .filter(Q(is_public=True) | Q(created_by=user))
+            # .filter(Q(is_public=True) | Q(created_by=user))
+            
             .select_related("created_by")
             .prefetch_related("sections", "sections__questions")
             .order_by("-created_at")

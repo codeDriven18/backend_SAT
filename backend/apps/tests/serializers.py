@@ -4,12 +4,12 @@ from .models import *
 from apps.users.models import User
 
 class ChoiceSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField()
+    # id = serializers.IntegerField()
     choice_text = serializers.CharField()
     choice_label = serializers.CharField()
     class Meta:
         model = Choice
-        fields = ['id', 'choice_text', 'choice_label', 'is_correct']
+        fields = ['choice_text', 'choice_label', 'is_correct']
 
 class ChoiceForStudentSerializer(serializers.ModelSerializer):
     """Hides correct answers for students during test"""
@@ -18,20 +18,19 @@ class ChoiceForStudentSerializer(serializers.ModelSerializer):
         fields = ['id', 'choice_text', 'choice_label']
 
 class QuestionSerializer(serializers.ModelSerializer):
-    choices = ChoiceSerializer(many=True)
-    
     class Meta:
         model = Question
-        fields = ['id', 'question_text', 'passage_text', 'marks', 'order', 'choices']
+        fields = ['id', 'text', 'image', 'answer', 'options', 'test_group']
+
 
 class QuestionForStudentSerializer(serializers.ModelSerializer):
     """Questions for students - no correct answers"""
     choices = ChoiceForStudentSerializer(many=True, read_only=True)
-    selected_choice_id = serializers.SerializerMethodField()  # ← NEW
+    selected_choice_id = serializers.SerializerMethodField()
 
     class Meta:
         model = Question
-        fields = ['id', 'question_text', 'passage_text', 'marks', 'order', 'choices', 'selected_choice_id']  # ← add selected_choice_id
+        fields = ['id', 'question_text', 'passage_text', 'marks', 'order', 'choices', 'selected_choice_id']
 
     def get_selected_choice_id(self, obj):
         attempt = self.context.get('attempt')
@@ -41,25 +40,46 @@ class QuestionForStudentSerializer(serializers.ModelSerializer):
         return ans.selected_choice_id if ans else None
 
 class QuestionCreateSerializer(serializers.ModelSerializer):
-    choices = ChoiceSerializer(many=True)
+    choices = ChoiceSerializer(many=True, required=False)
     
     class Meta:
         model = Question
-        fields = ['question_text', 'passage_text', 'marks', 'order', 'choices']
-    
-    def validate_choices(self, value):
-        if len(value) != 4:
-            raise serializers.ValidationError("Each question must have exactly 4 choices")
-        
-        labels = [choice.get('choice_label') for choice in value]
-        if set(labels) != {'A', 'B', 'C', 'D'}:
-            raise serializers.ValidationError("Choices must have labels A, B, C, D")
-        
-        correct_count = sum(1 for choice in value if choice.get('is_correct'))
-        if correct_count != 1:
-            raise serializers.ValidationError("Each question must have exactly one correct answer")
-        
-        return value
+        fields = [
+            'question_text',
+            'passage_text',
+            'marks',
+            'order',
+            'question_type',
+            'choices',
+            'correct_answers',
+            'image',
+        ]
+
+    def validate(self, data):
+        q_type = data.get('question_type')
+
+        if q_type == 'mcq':
+            choices = data.get('choices')
+            if not choices or len(choices) != 4:
+                raise serializers.ValidationError("MCQ must have exactly 4 choices")
+            
+            labels = [c.get('choice_label') for c in choices]
+            if set(labels) != {'A', 'B', 'C', 'D'}:
+                raise serializers.ValidationError("Choices must have labels A, B, C, D")
+
+            correct_count = sum(1 for c in choices if c.get('is_correct'))
+            if correct_count != 1:
+                raise serializers.ValidationError("MCQ must have exactly one correct answer")
+
+        elif q_type == 'math_free':
+            answers = data.get('correct_answers')
+            if not answers or not isinstance(answers, list):
+                raise serializers.ValidationError("Math free-answer must include a list of correct answers")
+
+        else:
+            raise serializers.ValidationError("Invalid question_type")
+
+        return data
 
 class TestSectionSerializer(serializers.ModelSerializer):
     questions = QuestionSerializer(many=True, read_only=True)
@@ -87,21 +107,20 @@ class TestSectionCreateSerializer(serializers.ModelSerializer):
         return value
 
 class TestGroupSerializer(serializers.ModelSerializer):
-    sections = TestSectionSerializer(many=True, read_only=True)
-    created_by_name = serializers.CharField(source='created_by.username', read_only=True)
-    question_count = serializers.SerializerMethodField()
-    
+    questions = QuestionSerializer(many=True, read_only=True)
+
     class Meta:
         model = TestGroup
         fields = [
-            'id', 'title', 'description', 'created_by', 'created_by_name',
-            'difficulty', 'total_marks', 'passing_marks', 'is_active', 
-            'is_public', 'created_at', 'sections', 'question_count'
+            'id',
+            'title',
+            'description',
+            'is_active',
+            'is_preview',
+            'created_at',
+            'questions',
         ]
-        read_only_fields = ['created_by', 'created_at']
-    
-    def get_question_count(self, obj):
-        return sum(section.questions.count() for section in obj.sections.all())
+
 
 class TestGroupCreateSerializer(serializers.ModelSerializer):
     sections = TestSectionCreateSerializer(many=True)
@@ -216,7 +235,6 @@ class TestGroupCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         sections_data = validated_data.pop('sections')
         
-        # Calculate total marks from all sections
         total_marks = 0
         for section_data in sections_data:
             for question_data in section_data['questions']:
@@ -225,21 +243,18 @@ class TestGroupCreateSerializer(serializers.ModelSerializer):
         validated_data['total_marks'] = total_marks
         test_group = TestGroup.objects.create(**validated_data)
         
-        # Create sections
         for section_order, section_data in enumerate(sections_data):
             questions_data = section_data.pop('questions')
             section_data['order'] = section_order
             
             section = TestSection.objects.create(test_group=test_group, **section_data)
             
-            # Create questions for this section
             for question_order, question_data in enumerate(questions_data):
                 choices_data = question_data.pop('choices')
                 question_data['order'] = question_order + 1
                 
                 question = Question.objects.create(section=section, **question_data)
                 
-                # Create choices
                 for choice_data in choices_data:
                     Choice.objects.create(question=question, **choice_data)
         
