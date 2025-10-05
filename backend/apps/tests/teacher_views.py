@@ -438,3 +438,5 @@ class TeacherAnalyticsViewSet(viewsets.ViewSet):
             ).data
         })
 
+        if getattr(self, "swagger_fake_view", False):
+            return Model.objects.none()

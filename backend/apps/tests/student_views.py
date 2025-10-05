@@ -736,3 +736,5 @@ class SectionQuestionsView(APIView):
             },
             "questions": questions_data
         })
+        if getattr(self, "swagger_fake_view", False):
+            return Model.objects.none()
