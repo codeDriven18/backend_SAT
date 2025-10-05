@@ -68,12 +68,25 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'eduplatform.wsgi.application'
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'postgresql_e4kf',
+        'USER': 'feruzbek',
+        'PASSWORD': 'qLrAuVedJVtNozZjrTBOgjdMwnnR0cjc',
+        'HOST': 'dpg-d30ljq8gjchc73f0h530-a.oregon-postgres.render.com',
+        'PORT': '5432',
     }
 }
+
+
 
 AUTH_PASSWORD_VALIDATORS = [
     {
