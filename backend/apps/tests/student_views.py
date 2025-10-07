@@ -745,6 +745,13 @@ class SectionQuestionsView(APIView):
         })
         if getattr(self, "swagger_fake_view", False):
             return Model.objects.none()
-        class CompleteSectionView(APIView):
-            serializer_class = EmptySerializer
-            # permission_classes = [IsAuthenticated]
+class SectionQuestionsView(APIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = EmptySerializer  # for Swagger docs
+
+    def get(self, request, test_id, section_id):
+        ...
+        test = get_object_or_404(TestGroup, id=test_id)
+        section = get_object_or_404(TestSection, id=section_id, test_group=test)
+        attempt = get_object_or_404(StudentTestAttempt, test_group=test, student=request.user)
+        section_attempt, _ = SectionAttempt.objects.get_or_create(test_attempt=attempt, section=section)

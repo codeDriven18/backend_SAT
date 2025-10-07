@@ -1,5 +1,7 @@
 from h11 import Response
 from rest_framework import serializers
+from rest_framework.response import Response
+
 
 from drf_spectacular.utils import extend_schema_serializer, OpenApiExample
 from rest_framework.views import APIView
