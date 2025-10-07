@@ -10,3 +10,4 @@ psycopg2-binary
 gunicorn
 # dj-database-url
 dj-database-url
+h11
