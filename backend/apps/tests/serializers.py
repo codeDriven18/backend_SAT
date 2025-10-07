@@ -1,10 +1,12 @@
+from h11 import Response
 from rest_framework import serializers
-from rest_framework.views import APIView
+
 from drf_spectacular.utils import extend_schema_serializer, OpenApiExample
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+from django.shortcuts import get_object_or_404
 from .models import *
 from apps.users.models import User
-from .serializers import TestResultsSerializer
-
 
 class ChoiceSerializer(serializers.ModelSerializer):
     # id = serializers.IntegerField()
@@ -409,5 +411,30 @@ class StudentAnswerOutSerializer(serializers.ModelSerializer):
             'selected_choice_text', 'selected_choice_label',
             'is_correct', 'answered_at'
         ]
-        class TestResultsView(APIView):
-            serializer_class = TestResultsSerializer
+        
+class SectionQuestionsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, test_id, section_id):
+        if getattr(self, "swagger_fake_view", False):
+            return Response([])
+
+        test = get_object_or_404(TestGroup, id=test_id)
+        section = get_object_or_404(TestSection, id=section_id, test_group=test)
+        attempt = get_object_or_404(StudentTestAttempt, test_group=test, student=request.user)
+        section_attempt, _ = SectionAttempt.objects.get_or_create(test_attempt=attempt, section=section)
+
+        questions_qs = section.questions.all().prefetch_related('choices')
+        questions_data = QuestionForStudentSerializer(
+            questions_qs, many=True, context={'attempt': attempt}
+        ).data
+
+        return Response({
+            "section": {
+                "id": section.id,
+                "name": section.name,
+                "time_limit": section.time_limit,
+                "started_at": section_attempt.started_at,
+            },
+            "questions": questions_data
+        })

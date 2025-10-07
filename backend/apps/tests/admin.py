@@ -25,7 +25,10 @@ class TestGroupAdmin(admin.ModelAdmin):
 
 @admin.register(Question)
 class QuestionAdmin(admin.ModelAdmin):
-    list_display = ['id', 'text', 'test_group', 'image']
+    # list_display = ['id', 'text', 'test_group', 'image']
+    list_display = ['id', 'question_text', 'test_group', 'image']
+    search_fields = ['question_text', 'test_group__title']
+    inlines = [ChoiceInline]
     list_filter = ['test_group']
 
 
