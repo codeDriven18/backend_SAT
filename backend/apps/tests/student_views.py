@@ -11,7 +11,6 @@ from .models import *
 from .serializers import *
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
 from drf_spectacular.types import OpenApiTypes
-from .serializers import EmptySerializer
 
 
 class StudentDashboardViewSet(viewsets.ViewSet):
@@ -745,36 +744,6 @@ class SectionQuestionsView(APIView):
         })
         if getattr(self, "swagger_fake_view", False):
             return Model.objects.none()
-from drf_spectacular.utils import extend_schema
+        class CompleteSectionView(APIView):
+            serializer_class = EmptySerializer
 
-@extend_schema(
-    request=AnswerInputSerializer,
-    responses=StudentAnswerOutSerializer
-)
-class CompleteSectionView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request, test_id, section_id):
-        # your existing logic here
-        ...
-
-@extend_schema(
-    request=BulkAnswersInputSerializer,
-    responses=StudentTestAttemptSerializer
-)
-class CompleteTestView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request, test_id):
-        # your existing logic here
-        ...
-
-@extend_schema(
-    responses=StudentTestAttemptSerializer
-)
-class TestResultsView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request, test_id):
-        # your existing logic here
-        ...

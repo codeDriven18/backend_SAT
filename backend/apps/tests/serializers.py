@@ -440,5 +440,4 @@ class SectionQuestionsView(APIView):
             },
             "questions": questions_data
         })
-class EmptySerializer(serializers.Serializer):
-    pass
+        
