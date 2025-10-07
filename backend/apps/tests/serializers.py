@@ -25,9 +25,23 @@ class ChoiceForStudentSerializer(serializers.ModelSerializer):
         fields = ['id', 'choice_text', 'choice_label']
 
 class QuestionSerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField(read_only=True)
+
     class Meta:
         model = Question
-        fields = ['id', 'text', 'image_url', 'answer', 'options', 'test_group', 'question_text', 'passage_text', 'marks', 'order', 'section', 'question_type', 'correct_answers']
+        # expose the canonical model fields; image_url is computed below
+        fields = [
+            'id', 'question_text', 'passage_text', 'image_url', 'image',
+            'test_group', 'section', 'marks', 'order', 'question_type', 'correct_answers'
+        ]
+
+    def get_image_url(self, obj):
+        try:
+            if obj.image and hasattr(obj.image, 'url'):
+                return obj.image.url
+        except Exception:
+            pass
+        return None
 
 
 class QuestionForStudentSerializer(serializers.ModelSerializer):
@@ -48,12 +62,16 @@ class QuestionForStudentSerializer(serializers.ModelSerializer):
 
 class QuestionCreateSerializer(serializers.ModelSerializer):
     choices = ChoiceSerializer(many=True, required=False)
+    # accept an uploaded image on create/update; provide image_url read-only
+    image = serializers.ImageField(required=False, allow_null=True)
+    image_url = serializers.SerializerMethodField(read_only=True)
     
     class Meta:
         model = Question
         fields = [
             'question_text',
             'passage_text',
+            'image',
             'image_url',
             'marks',
             'order',
@@ -440,4 +458,5 @@ class SectionQuestionsView(APIView):
             },
             "questions": questions_data
         })
-        
+        class SubmitAnswerView(APIView):
+            serializer_class = SubmitAnswerSerializer
