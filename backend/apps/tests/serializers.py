@@ -1,7 +1,10 @@
 from rest_framework import serializers
+from rest_framework.views import APIView
 from drf_spectacular.utils import extend_schema_serializer, OpenApiExample
 from .models import *
 from apps.users.models import User
+from .serializers import TestResultsSerializer
+
 
 class ChoiceSerializer(serializers.ModelSerializer):
     # id = serializers.IntegerField()
@@ -406,3 +409,5 @@ class StudentAnswerOutSerializer(serializers.ModelSerializer):
             'selected_choice_text', 'selected_choice_label',
             'is_correct', 'answered_at'
         ]
+        class TestResultsView(APIView):
+            serializer_class = TestResultsSerializer
