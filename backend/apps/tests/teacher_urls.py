@@ -8,6 +8,7 @@ router.register(r'groups', teacher_views.StudentGroupViewSet, basename='teacher-
 router.register(r'assignments', teacher_views.TestAssignmentViewSet, basename='teacher-assignments')
 router.register(r'library', teacher_views.TestLibraryViewSet, basename='test-library')
 router.register(r'analytics', teacher_views.TeacherAnalyticsViewSet, basename='teacher-analytics')
+router.register(r'questions', teacher_views.QuestionViewSet, basename='teacher-questions')
 
 urlpatterns = [
     path('', include(router.urls)),

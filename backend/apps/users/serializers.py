@@ -59,10 +59,17 @@ class UserLoginSerializer(serializers.Serializer):
         return attrs
 
 class UserSerializer(serializers.ModelSerializer):
+    profile_picture = serializers.ImageField(read_only=True)
     class Meta:
         model = User
-        fields = ('id', 'username', 'email', 'first_name', 'last_name', 
-                 'user_type', 'phone_number', 'created_at')
+        fields = (
+            'id', 'username', 'email', 'first_name', 'last_name',
+            'user_type', 'phone_number', 'profile_picture', 'created_at'
+        )
+
+
+class ProfilePictureUploadSerializer(serializers.Serializer):
+    profile_picture = serializers.ImageField()
 
 class StudentProfileSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)

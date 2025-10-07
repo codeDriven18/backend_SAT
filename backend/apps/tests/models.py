@@ -157,6 +157,8 @@ class StudentAnswer(models.Model):
     section_attempt = models.ForeignKey(SectionAttempt, on_delete=models.CASCADE, related_name='answers')
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
     selected_choice = models.ForeignKey(Choice, on_delete=models.CASCADE, null=True, blank=True)
+    # Text input answer (for math_free / open response questions)
+    text_answer = models.TextField(null=True, blank=True)
     is_correct = models.BooleanField(default=False)
     answered_at = models.DateTimeField(auto_now=True)
 
@@ -164,8 +166,32 @@ class StudentAnswer(models.Model):
         return f"{self.test_attempt.student.username} - {self.question.question_text[:30]}..."
     
     def save(self, *args, **kwargs):
+        # If a choice was selected (MCQ) determine correctness from choice
         if self.selected_choice:
             self.is_correct = self.selected_choice.is_correct
+        else:
+            # If it's a text answer (math_free), compare to question.correct_answers
+            try:
+                q = self.question
+                if q.question_type == 'math_free' and self.text_answer is not None:
+                    # Try numeric comparison first
+                    ta = str(self.text_answer).strip()
+                    correct = False
+                    for cand in q.correct_answers or []:
+                        try:
+                            # numeric compare
+                            if float(cand) == float(ta):
+                                correct = True
+                                break
+                        except Exception:
+                            # fallback to normalized string compare
+                            if str(cand).strip().lower() == ta.lower():
+                                correct = True
+                                break
+                    self.is_correct = correct
+            except Exception:
+                # If anything goes wrong, keep existing is_correct value
+                pass
         super().save(*args, **kwargs)
 
     class Meta:

@@ -28,6 +28,7 @@ import CreateTestModal from './modals/CreateTestModal';
 import GroupDetails from './modals/GroupDetails';
 import AssignmentsPage from './AssignmentsPage';
 import LibraryPage from './LibraryPage';
+import ProfileSettings from './ProfileSettings';
 
 const TeacherDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -531,6 +532,11 @@ const TeacherDashboard = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Avatar */}
+          <div className="bg-white rounded-xl border border-gray-100 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Profile Picture</h3>
+            <ProfileSettings />
+          </div>
           {/* Profile Information */}
           <div className="bg-white rounded-xl border border-gray-100 p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Personal Information</h3>
@@ -707,13 +713,17 @@ const TeacherDashboard = () => {
             </div>
             <div className="flex items-center space-x-4">
               <NotificationBell />
-              <button 
+              <button
                 onClick={() => setActiveTab('profile')}
-                className="w-8 h-8 bg-emerald-600 rounded-full flex items-center justify-center hover:bg-emerald-700 transition-colors"
+                className="w-9 h-9 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center hover:opacity-90 transition-opacity"
               >
-                <span className="text-white font-medium text-sm">
-                  {user?.first_name?.[0] || user?.username?.[0] || 'T'}
-                </span>
+                {user?.profile_picture ? (
+                  <img src={user.profile_picture} alt="avatar" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-emerald-600 font-medium text-sm">
+                    {user?.first_name?.[0] || user?.username?.[0] || 'T'}
+                  </span>
+                )}
               </button>
             </div>
           </div>

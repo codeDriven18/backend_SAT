@@ -265,6 +265,60 @@ class TestAssignmentViewSet(viewsets.ModelViewSet):
             return TestAssignment.objects.filter(assigned_by=self.request.user).order_by('-assigned_at')
         return TestAssignment.objects.none()
 
+
+class QuestionViewSet(viewsets.ModelViewSet):
+    """CRUD for questions for teachers (allows creating mcq, math_free, and image questions)."""
+    permission_classes = [IsAuthenticated]
+    serializer_class = QuestionSerializer
+
+    def get_queryset(self):
+        if self.request.user.user_type == 'teacher':
+            # teachers can manage questions they created via test_group.created_by
+            return Question.objects.filter(test_group__created_by=self.request.user).order_by('-order')
+        return Question.objects.none()
+
+    def create(self, request, *args, **kwargs):
+        # allow multipart for image upload in question creation
+        serializer = QuestionCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        q_data = serializer.validated_data
+        # create question
+        question = Question.objects.create(
+            question_text=q_data.get('question_text'),
+            passage_text=q_data.get('passage_text'),
+            image=q_data.get('image'),
+            marks=q_data.get('marks', 1),
+            order=q_data.get('order', 0),
+            section=q_data.get('section'),
+            question_type=q_data.get('question_type', 'mcq'),
+            correct_answers=q_data.get('correct_answers', [])
+        )
+
+        # create choices if present
+        for c in q_data.get('choices') or []:
+            Choice.objects.create(question=question, **c)
+
+        return Response(QuestionSerializer(question).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=['post'], url_path='upload-image')
+    def upload_image(self, request):
+        # Expected query param ?question_id=NN
+        question_id = request.query_params.get('question_id')
+        if not question_id:
+            return Response({'error': 'question_id required'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            question = Question.objects.get(id=question_id)
+        except Question.DoesNotExist:
+            return Response({'error': 'Question not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        file = request.FILES.get('image')
+        if not file:
+            return Response({'error': 'No image file provided'}, status=status.HTTP_400_BAD_REQUEST)
+
+        question.image = file
+        question.save()
+        return Response({'message': 'Image uploaded', 'image_url': question.image.url})
+
 class AssignTestToGroupView(APIView):
     permission_classes = [IsAuthenticated]
 

@@ -54,6 +54,18 @@ const useAuthStore = create((set, get) => ({
   
 
   },
+  updateProfilePicture: async (file) => {
+    if (!file) return { success: true };
+    try {
+      const res = await authAPI.uploadProfilePicture(file);
+      const updatedUser = res.data.user;
+      set({ user: updatedUser });
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.response?.data || error.message };
+    }
+  },
   
 }));
 

@@ -382,25 +382,26 @@ class SubmitAnswerView(APIView):
     def post(self, request, test_id):
         test = get_object_or_404(TestGroup, id=test_id)
         attempt = get_object_or_404(StudentTestAttempt, test_group=test, student=request.user)
-        
         question_id = request.data.get('question_id')
         choice_id = request.data.get('choice_id')
-        
+        text_answer = request.data.get('text_answer')
+
         question = get_object_or_404(Question, id=question_id, section__test_group=test)
         choice = get_object_or_404(Choice, id=choice_id, question=question) if choice_id else None
-        
+
         section_attempt = get_object_or_404(SectionAttempt, test_attempt=attempt, section=question.section)
-        
+
         # Save answer
+        defaults = {'selected_choice': choice, 'section_attempt': section_attempt}
+        if text_answer is not None:
+            defaults['text_answer'] = text_answer
+
         answer, created = StudentAnswer.objects.update_or_create(
             test_attempt=attempt,
             question=question,
-            defaults={
-                'selected_choice': choice,
-                'section_attempt': section_attempt
-            }
+            defaults=defaults
         )
-        
+
         return Response({'message': 'Answer saved successfully'})
 
 class CompleteSectionView(APIView):
@@ -690,6 +691,7 @@ class SubmitBulkAnswersView(APIView):
             for item in items:
                 qid = item['question_id']
                 cid = item.get('choice_id')
+                text = item.get('text_answer')
 
                 if qid not in allowed_qs:
                     return Response({'detail': f'question_id {qid} is not in this section'}, status=400)
@@ -701,10 +703,13 @@ class SubmitBulkAnswersView(APIView):
                         return Response({'detail': f'choice_id {cid} does not belong to question {qid}'}, status=400)
                     choice = choices_by_q[qid][cid]
 
+                defaults = {'selected_choice': choice, 'section_attempt': section_attempt}
+                if text is not None:
+                    defaults['text_answer'] = text
                 ans, _created = StudentAnswer.objects.update_or_create(
                     test_attempt=attempt,
                     question=question,
-                    defaults={'selected_choice': choice, 'section_attempt': section_attempt}
+                    defaults=defaults
                 )
                 saved.append(ans)
 

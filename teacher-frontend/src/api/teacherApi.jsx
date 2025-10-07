@@ -20,6 +20,17 @@ export const teacherAPI = {
   updateTest: (id, testData) => api.put(`/api/teacher/tests/${id}/`, testData),
   deleteTest: (id) => api.delete(`/api/teacher/tests/${id}/`),
   getTest: (id) => api.get(`/api/teacher/tests/${id}/`),
+
+  // Question image upload (optional)
+  uploadQuestionImage: (questionId, file, onProgress) => {
+    const form = new FormData();
+    form.append('image', file);
+    const config = {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    };
+    if (onProgress) config.onUploadProgress = onProgress;
+    return api.post(`/api/teacher/questions/upload-image?question_id=${questionId}`, form, config);
+  },
   
   // Test Library
   getLibraryTests: () => api.get('/api/teacher/library/'),

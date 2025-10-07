@@ -11,7 +11,8 @@ from .serializers import (
     UserLoginSerializer, 
     UserSerializer,
     StudentProfileSerializer,
-    TeacherProfileSerializer
+    TeacherProfileSerializer,
+    ProfilePictureUploadSerializer
 )
 
 class RegisterView(generics.CreateAPIView):
@@ -167,6 +168,13 @@ class ProfileView(APIView):
             'user': user_data,
             'profile': profile_data
         })
+
+    def patch(self, request):
+        serializer = ProfilePictureUploadSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        request.user.profile_picture = serializer.validated_data['profile_picture']
+        request.user.save(update_fields=['profile_picture'])
+        return Response({'message': 'Profile picture updated', 'user': UserSerializer(request.user).data})
 
 class UserListView(generics.ListAPIView):
     queryset = User.objects.all()

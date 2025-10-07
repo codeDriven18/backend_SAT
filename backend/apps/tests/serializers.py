@@ -20,7 +20,7 @@ class ChoiceForStudentSerializer(serializers.ModelSerializer):
 class QuestionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Question
-        fields = ['id', 'text', 'image', 'answer', 'options', 'test_group']
+        fields = ['id', 'text', 'image', 'answer', 'options', 'test_group', 'question_text', 'passage_text', 'marks', 'order', 'section', 'question_type', 'correct_answers']
 
 
 class QuestionForStudentSerializer(serializers.ModelSerializer):
@@ -47,12 +47,13 @@ class QuestionCreateSerializer(serializers.ModelSerializer):
         fields = [
             'question_text',
             'passage_text',
+            'image',
             'marks',
             'order',
             'question_type',
             'choices',
             'correct_answers',
-            'image',
+            'section',
         ]
 
     def validate(self, data):
@@ -76,6 +77,10 @@ class QuestionCreateSerializer(serializers.ModelSerializer):
             if not answers or not isinstance(answers, list):
                 raise serializers.ValidationError("Math free-answer must include a list of correct answers")
 
+        elif q_type == 'image':
+            # image question may not need choices or correct_answers, but allow optional image field
+            pass
+
         else:
             raise serializers.ValidationError("Invalid question_type")
 
@@ -91,6 +96,12 @@ class TestSectionSerializer(serializers.ModelSerializer):
     
     def get_question_count(self, obj):
         return obj.questions.count()
+
+class TestSectionWithQuestionsSerializer(serializers.ModelSerializer):
+    questions = QuestionSerializer(many=True, read_only=True)
+    class Meta:
+        model = TestSection
+        fields = ['id', 'name', 'description', 'time_limit', 'order', 'questions']
 
 class TestSectionCreateSerializer(serializers.ModelSerializer):
     questions = QuestionCreateSerializer(many=True)
@@ -119,6 +130,15 @@ class TestGroupSerializer(serializers.ModelSerializer):
             'is_preview',
             'created_at',
             'questions',
+        ]
+
+class TestGroupDetailSerializer(serializers.ModelSerializer):
+    sections = TestSectionWithQuestionsSerializer(many=True, read_only=True)
+    class Meta:
+        model = TestGroup
+        fields = [
+            'id', 'title', 'description', 'difficulty', 'total_marks',
+            'passing_marks', 'is_active', 'is_public', 'created_at', 'sections'
         ]
 
 

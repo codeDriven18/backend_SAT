@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, BookOpen, Plus, Trash2, Save } from 'lucide-react';
+import { X, BookOpen, Plus, Trash2, Save, Image } from 'lucide-react';
 import useTeacherStore from '../../store/useTeacherStore';
 
 
@@ -38,17 +38,12 @@ const CreateTestModal = ({ onClose, onSuccess }) => {
   const [error, setError] = useState('');
   const [currentStep, setCurrentStep] = useState(1);
 
-  const { createTest } = useTeacherStore();
+  const { createTest, uploadQuestionImage } = useTeacherStore();
+  const [questionImages, setQuestionImages] = useState({}); // keyed by `sectionIndex-questionIndex` -> File
+  const [questionPreviews, setQuestionPreviews] = useState({}); // keyed by `sectionIndex-questionIndex` -> local preview URL
+  const [uploadState, setUploadState] = useState({}); // keyed by `sectionIndex-questionIndex` -> {progress, uploading, uploadedUrl, error}
 
-  const addChoice = (sectionIndex, questionIndex) => {
-    const updatedSections = [...formData.sections];
-    updatedSections[sectionIndex].questions[questionIndex].choices.push({
-      choice_text: '',
-      choice_label: String.fromCharCode(65 + updatedSections[sectionIndex].questions[questionIndex].choices.length), // A,B,C...
-      is_correct: false,
-    });
-    setFormData({ ...formData, sections: updatedSections });
-  };
+  // Note: choices are fixed to 4 for MCQ; adding extra choices is disabled.
   
   const updateQuestionField = (sectionIndex, questionIndex, field, value) => {
     const updatedSections = [...formData.sections];
@@ -67,9 +62,52 @@ const CreateTestModal = ({ onClose, onSuccess }) => {
     setLoading(true);
     setError('');
 
+    // Client-side validation: each MCQ must have exactly 1 correct choice
+    for (const [sIndex, section] of formData.sections.entries()) {
+      for (const [qIndex, question] of (section.questions || []).entries()) {
+        if ((question.question_type || 'mcq') === 'mcq') {
+          const correctCount = (question.choices || []).filter(c => c.is_correct).length;
+          if (correctCount !== 1) {
+            setError(`Section ${sIndex+1} Question ${qIndex+1}: MCQ must have exactly one correct choice.`);
+            setLoading(false);
+            return;
+          }
+        }
+      }
+    }
+
     try {
       const result = await createTest(formData);
       if (result.success) {
+        const created = result.data; // expect sections with questions and IDs from backend
+        const uploads = [];
+        if (created?.sections && Array.isArray(created.sections)) {
+          created.sections.forEach((sec, si) => {
+            (sec.questions || []).forEach((q, qi) => {
+              const key = `${si}-${qi}`;
+              const file = questionImages[key];
+              if (file && q?.id) {
+                // start upload with progress and update uploadState
+                uploads.push((async () => {
+                  setUploadState(s => ({ ...s, [key]: { ...(s[key]||{}), uploading: true, progress: 0, error: null } }));
+                  const res = await uploadQuestionImage(q.id, file, (ev) => {
+                    const pct = ev.total ? Math.round((ev.loaded * 100) / ev.total) : 0;
+                    setUploadState(s => ({ ...s, [key]: { ...(s[key]||{}), progress: pct } }));
+                  });
+                  if (res.success) {
+                    setUploadState(s => ({ ...s, [key]: { ...(s[key]||{}), uploading: false, progress: 100, uploadedUrl: res.data?.image_url || null } }));
+                  } else {
+                    setUploadState(s => ({ ...s, [key]: { ...(s[key]||{}), uploading: false, error: res.error } }));
+                  }
+                  return res;
+                })());
+              }
+            });
+          });
+        }
+        if (uploads.length) {
+          await Promise.allSettled(uploads);
+        }
         onSuccess();
       } else {
         setError(result.error.detail || result.error.message || 'Failed to create test');
@@ -104,7 +142,9 @@ const CreateTestModal = ({ onClose, onSuccess }) => {
       passage_text: '',
       marks: 1,
       order: updatedSections[sectionIndex].questions.length + 1,
-      choices: [
+        question_type: 'mcq',
+        correct_answers: [],
+        choices: [
         { choice_text: '', choice_label: 'A', is_correct: false },
         { choice_text: '', choice_label: 'B', is_correct: false },
         { choice_text: '', choice_label: 'C', is_correct: false },
@@ -328,39 +368,151 @@ const CreateTestModal = ({ onClose, onSuccess }) => {
                                 className="w-24 px-3 py-2 mb-2 border rounded-lg"
                               />
 
-                              {/* Choices */}
-                              <div className="space-y-2">
-                                {question.choices.map((choice, choiceIndex) => (
-                                  <div key={choiceIndex} className="flex items-center space-x-2">
-                                    <input
-                                      type="text"
-                                      value={choice.choice_text}
-                                      onChange={(e) =>
-                                        updateChoiceField(sectionIndex, questionIndex, choiceIndex, "choice_text", e.target.value)
-                                      }
-                                      placeholder={`Choice ${choice.choice_label}`}
-                                      className="flex-1 px-3 py-2 border rounded-lg"
-                                    />
-                                    <label className="flex items-center space-x-1">
-                                      <input
-                                        type="checkbox"
-                                        checked={choice.is_correct}
-                                        onChange={(e) =>
-                                          updateChoiceField(sectionIndex, questionIndex, choiceIndex, "is_correct", e.target.checked)
-                                        }
-                                      />
-                                      <span>Correct</span>
-                                    </label>
-                                  </div>
-                                ))}
-                                <button
-                                  type="button"
-                                  onClick={() => addChoice(sectionIndex, questionIndex)}
-                                  className="text-sm text-emerald-600 hover:text-emerald-700"
-                                >
-                                  + Add Choice
-                                </button>
+                              {/* Optional image upload (icon button) */}
+                              <div className="mb-2 flex items-center space-x-3">
+                                <label className="block text-sm text-gray-700">Question Image (optional)</label>
+                                <div className="flex items-center space-x-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => document.getElementById(`qimg-${sectionIndex}-${questionIndex}`)?.click()}
+                                    className="p-2 rounded bg-gray-100 hover:bg-gray-200"
+                                  >
+                                    <Image className="w-5 h-5 text-gray-600" />
+                                  </button>
+                                  <input
+                                    id={`qimg-${sectionIndex}-${questionIndex}`}
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) => {
+                                              const file = e.target.files?.[0] || null;
+                                              const key = `${sectionIndex}-${questionIndex}`;
+                                              setQuestionImages((prev) => ({ ...prev, [key]: file }));
+                                              // create local preview
+                                              if (file) {
+                                                const url = URL.createObjectURL(file);
+                                                setQuestionPreviews(p => ({ ...p, [key]: url }));
+                                              } else {
+                                                setQuestionPreviews(p => ({ ...p, [key]: null }));
+                                              }
+                                              // If question already has an ID (e.g., editing existing question), upload immediately
+                                              const q = formData.sections[sectionIndex].questions[questionIndex];
+                                              if (file && q?.id) {
+                                                // start immediate upload
+                                                setUploadState(s => ({ ...s, [key]: { ...(s[key]||{}), uploading: true, progress: 0, error: null } }));
+                                                uploadQuestionImage(q.id, file, (ev) => {
+                                                  const pct = ev.total ? Math.round((ev.loaded * 100) / ev.total) : 0;
+                                                  setUploadState(s => ({ ...s, [key]: { ...(s[key]||{}), progress: pct } }));
+                                                }).then(res => {
+                                                  if (res.success) {
+                                                    setUploadState(s => ({ ...s, [key]: { ...(s[key]||{}), uploading: false, progress: 100, uploadedUrl: res.data?.image_url || null } }));
+                                                  } else {
+                                                    setUploadState(s => ({ ...s, [key]: { ...(s[key]||{}), uploading: false, error: res.error } }));
+                                                  }
+                                                });
+                                              }
+                                    }}
+                                    className="hidden"
+                                  />
+                                          <div className="flex items-center space-x-2">
+                                            {questionPreviews[`${sectionIndex}-${questionIndex}`] ? (
+                                              <img src={questionPreviews[`${sectionIndex}-${questionIndex}`]} alt="preview" className="w-12 h-8 object-cover rounded" />
+                                            ) : (
+                                              <span className="text-sm text-gray-600">{questionImages[`${sectionIndex}-${questionIndex}`]?.name || 'No file'}</span>
+                                            )}
+                                            <div className="w-36">
+                                              {uploadState[`${sectionIndex}-${questionIndex}`] && (
+                                                <div className="text-xs">
+                                                  <div className="h-2 bg-gray-200 rounded overflow-hidden">
+                                                    <div style={{ width: `${uploadState[`${sectionIndex}-${questionIndex}`].progress || 0}%` }} className="h-full bg-emerald-600" />
+                                                  </div>
+                                                  <div className="flex items-center justify-between text-xs mt-1">
+                                                    <span>{uploadState[`${sectionIndex}-${questionIndex}`].progress || 0}%</span>
+                                                    {uploadState[`${sectionIndex}-${questionIndex}`].error ? (
+                                                      <button type="button" onClick={async () => {
+                                                        // retry
+                                                        const key = `${sectionIndex}-${questionIndex}`;
+                                                        const q = formData.sections[sectionIndex].questions[questionIndex];
+                                                        const file = questionImages[key];
+                                                        if (!file || !q?.id) return;
+                                                        setUploadState(s => ({ ...s, [key]: { ...(s[key]||{}), uploading: true, progress: 0, error: null } }));
+                                                        const res = await uploadQuestionImage(q.id, file, (ev) => {
+                                                          const pct = ev.total ? Math.round((ev.loaded * 100) / ev.total) : 0;
+                                                          setUploadState(s => ({ ...s, [key]: { ...(s[key]||{}), progress: pct } }));
+                                                        });
+                                                        if (res.success) {
+                                                          setUploadState(s => ({ ...s, [key]: { ...(s[key]||{}), uploading: false, progress: 100, uploadedUrl: res.data?.image_url || null } }));
+                                                        } else {
+                                                          setUploadState(s => ({ ...s, [key]: { ...(s[key]||{}), uploading: false, error: res.error } }));
+                                                        }
+                                                      }} className="text-emerald-600">Retry</button>
+                                                    ) : (
+                                                      uploadState[`${sectionIndex}-${questionIndex}`].uploadedUrl ? <a className="text-xs text-blue-600 truncate" href={uploadState[`${sectionIndex}-${questionIndex}`].uploadedUrl} target="_blank" rel="noreferrer">View</a> : null
+                                                    )}
+                                                  </div>
+                                                </div>
+                                              )}
+                                            </div>
+                                          </div>
+                                </div>
                               </div>
+
+                              {/* Question type selector */}
+                              <div className="mb-2">
+                                <label className="block text-sm text-gray-700 mb-1">Question Type</label>
+                                <select
+                                  value={question.question_type || 'mcq'}
+                                  onChange={(e) => updateQuestionField(sectionIndex, questionIndex, 'question_type', e.target.value)}
+                                  className="w-full px-3 py-2 border rounded-lg"
+                                >
+                                  <option value="mcq">Multiple Choice (MCQ)</option>
+                                  <option value="math_free">Math Input (student types answer)</option>
+                                </select>
+                              </div>
+
+                              {/* Math free correct answers input (comma-separated) */}
+                              {question.question_type === 'math_free' && (
+                                <div className="mb-2">
+                                  <label className="block text-sm text-gray-700 mb-1">Correct Answers (comma-separated)</label>
+                                  <input
+                                    type="text"
+                                    value={(question.correct_answers || []).join(',')}
+                                    onChange={(e) => updateQuestionField(sectionIndex, questionIndex, 'correct_answers', e.target.value.split(',').map(s => s.trim()).filter(Boolean))}
+                                    placeholder="e.g., 5,5.0,five"
+                                    className="w-full px-3 py-2 border rounded-lg"
+                                  />
+                                </div>
+                              )}
+
+                              {/* Choices (only for MCQ) */}
+                              {question.question_type === 'mcq' && (
+                                <div className="space-y-2">
+                                  <div className="text-xs text-gray-500">MCQs are fixed to 4 choices (A–D). Mark exactly one as correct.</div>
+                                  {question.choices.map((choice, choiceIndex) => (
+                                    <div key={choiceIndex} className="flex items-center space-x-2">
+                                      <input
+                                        type="text"
+                                        value={choice.choice_text}
+                                        onChange={(e) =>
+                                          updateChoiceField(sectionIndex, questionIndex, choiceIndex, "choice_text", e.target.value)
+                                        }
+                                        placeholder={`Choice ${choice.choice_label}`}
+                                        className="flex-1 px-3 py-2 border rounded-lg"
+                                      />
+                                      <label className="flex items-center space-x-1">
+                                        <input
+                                          type="checkbox"
+                                          checked={choice.is_correct}
+                                          onChange={(e) =>
+                                            updateChoiceField(sectionIndex, questionIndex, choiceIndex, "is_correct", e.target.checked)
+                                          }
+                                        />
+                                        <span>Correct</span>
+                                      </label>
+                                    </div>
+                                  ))}
+                                  {/* Add Choice removed — MCQs remain 4 choices */}
+                                </div>
+                              )}
                             </div>
                           ))}
                     </span>
