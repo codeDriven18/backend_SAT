@@ -75,18 +75,18 @@ if os.getenv('RENDER'):
     }
 else:
     DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'postgresql_e4kf',
-        'USER': 'feruzbek',
-        'PASSWORD': 'qLrAuVedJVtNozZjrTBOgjdMwnnR0cjc',
-        'HOST': 'dpg-d30ljq8gjchc73f0h530-a.oregon-postgres.render.com',
-        'PORT': '5432',
-        'OPTIONS': {
-            'sslmode': 'require',
-        },
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': 'postgresql_37ip',
+            'USER': 'bushstep',
+            'PASSWORD': 'NKbxLpHLAhTIsxe9FAxcUGr2jqjV7zwv',
+            'HOST': 'dpg-d3ipdm6mcj7s739ehngg-a.oregon-postgres.render.com',
+            'PORT': '5432',
+            'OPTIONS': {
+                'sslmode': 'require',
+            },
+        }
     }
-}
 
 # DATABASES = {
 #     'default': {
