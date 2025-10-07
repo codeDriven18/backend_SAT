@@ -745,13 +745,36 @@ class SectionQuestionsView(APIView):
         })
         if getattr(self, "swagger_fake_view", False):
             return Model.objects.none()
-class SectionQuestionsView(APIView):
-    permission_classes = [IsAuthenticated]
-    serializer_class = EmptySerializer  # for Swagger docs
+from drf_spectacular.utils import extend_schema
 
-    def get(self, request, test_id, section_id):
+@extend_schema(
+    request=AnswerInputSerializer,
+    responses=StudentAnswerOutSerializer
+)
+class CompleteSectionView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, test_id, section_id):
+        # your existing logic here
         ...
-        test = get_object_or_404(TestGroup, id=test_id)
-        section = get_object_or_404(TestSection, id=section_id, test_group=test)
-        attempt = get_object_or_404(StudentTestAttempt, test_group=test, student=request.user)
-        section_attempt, _ = SectionAttempt.objects.get_or_create(test_attempt=attempt, section=section)
+
+@extend_schema(
+    request=BulkAnswersInputSerializer,
+    responses=StudentTestAttemptSerializer
+)
+class CompleteTestView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, test_id):
+        # your existing logic here
+        ...
+
+@extend_schema(
+    responses=StudentTestAttemptSerializer
+)
+class TestResultsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, test_id):
+        # your existing logic here
+        ...
