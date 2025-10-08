@@ -1,7 +1,8 @@
 from h11 import Response
 from rest_framework import serializers
 from rest_framework.response import Response
-
+from drf_spectacular.utils import extend_schema_field
+from rest_framework import serializers
 
 from drf_spectacular.utils import extend_schema_serializer, OpenApiExample
 from rest_framework.views import APIView
@@ -29,12 +30,12 @@ class QuestionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Question
-        # expose the canonical model fields; image_url is computed below
         fields = [
             'id', 'question_text', 'passage_text', 'image_url', 'image',
             'test_group', 'section', 'marks', 'order', 'question_type', 'correct_answers'
         ]
 
+    @extend_schema_field(serializers.URLField())
     def get_image_url(self, obj):
         try:
             if obj.image and hasattr(obj.image, 'url'):
@@ -42,7 +43,6 @@ class QuestionSerializer(serializers.ModelSerializer):
         except Exception:
             pass
         return None
-
 
 class QuestionForStudentSerializer(serializers.ModelSerializer):
     """Questions for students - no correct answers"""
@@ -53,6 +53,7 @@ class QuestionForStudentSerializer(serializers.ModelSerializer):
         model = Question
         fields = ['id', 'question_text', 'passage_text', 'marks', 'order', 'choices', 'selected_choice_id']
 
+    @extend_schema_field(serializers.IntegerField(allow_null=True))
     def get_selected_choice_id(self, obj):
         attempt = self.context.get('attempt')
         if not attempt:
@@ -111,6 +112,15 @@ class QuestionCreateSerializer(serializers.ModelSerializer):
 
         return data
 
+    @extend_schema_field(serializers.URLField())
+    def get_image_url(self, obj):
+        try:
+            if obj and getattr(obj, 'image', None) and hasattr(obj.image, 'url'):
+                return obj.image.url
+        except Exception:
+            pass
+        return None
+
 class TestSectionSerializer(serializers.ModelSerializer):
     questions = QuestionSerializer(many=True, read_only=True)
     question_count = serializers.SerializerMethodField()
@@ -119,6 +129,7 @@ class TestSectionSerializer(serializers.ModelSerializer):
         model = TestSection
         fields = ['id', 'name', 'description', 'time_limit', 'order', 'questions', 'question_count']
     
+    @extend_schema_field(serializers.IntegerField())
     def get_question_count(self, obj):
         return obj.questions.count()
 
@@ -318,9 +329,11 @@ class TestGroupLibrarySerializer(serializers.ModelSerializer):
             'total_marks', 'passing_marks', 'created_at', 'section_count', 'question_count'
         ]
     
+    @extend_schema_field(serializers.IntegerField())
     def get_section_count(self, obj):
         return obj.sections.count()
     
+    @extend_schema_field(serializers.IntegerField())
     def get_question_count(self, obj):
         return sum(section.questions.count() for section in obj.sections.all())
 
@@ -331,13 +344,14 @@ class StudentBasicSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'username', 'first_name', 'last_name', 'full_name']
     
+    @extend_schema_field(serializers.CharField())
     def get_full_name(self, obj):
         return f"{obj.first_name} {obj.last_name}".strip() or obj.username
 
 class StudentGroupSerializer(serializers.ModelSerializer):
     students = StudentBasicSerializer(many=True, read_only=True)
     teacher_name = serializers.CharField(source='teacher.username', read_only=True)
-    student_count = serializers.ReadOnlyField()
+    student_count = serializers.IntegerField(read_only=True)
     
     class Meta:
         model = StudentGroup
@@ -415,6 +429,7 @@ class AddRemoveStudentSerializer(serializers.Serializer):
 class AnswerInputSerializer(serializers.Serializer):
     question_id = serializers.IntegerField()
     choice_id = serializers.IntegerField(required=False, allow_null=True)
+    text_answer = serializers.CharField(required=False, allow_null=True)
 
 class BulkAnswersInputSerializer(serializers.Serializer):
     answers = AnswerInputSerializer(many=True)
@@ -458,5 +473,8 @@ class SectionQuestionsView(APIView):
             },
             "questions": questions_data
         })
-        class SubmitAnswerView(APIView):
-            serializer_class = SubmitAnswerSerializer
+        
+
+class EmptySerializer(serializers.Serializer):
+    """Used as a placeholder serializer for endpoints that have no request body."""
+    pass

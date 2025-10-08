@@ -2,6 +2,7 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -86,10 +87,16 @@ class TeacherDashboardView(APIView):
 class TeacherTestViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     serializer_class = TestGroupSerializer
+    queryset = TestGroup.objects.none()
     
     def get_queryset(self):
-        if self.request.user.user_type == 'teacher':
-            return TestGroup.objects.filter(created_by=self.request.user).order_by('-created_at')
+        if getattr(self, 'swagger_fake_view', False):
+            return self.queryset
+        user = getattr(self.request, 'user', None)
+        if user is None or getattr(user, 'is_anonymous', True):
+            return self.queryset
+        if getattr(user, 'user_type', None) == 'teacher':
+            return TestGroup.objects.filter(created_by=user).order_by('-created_at')
         return TestGroup.objects.none()
     
     def get_serializer_class(self):
@@ -181,10 +188,16 @@ class TestLibraryViewSet(viewsets.ReadOnlyModelViewSet):
 class StudentGroupViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     serializer_class = StudentGroupSerializer
+    queryset = StudentGroup.objects.none()
     
     def get_queryset(self):
-        if self.request.user.user_type == 'teacher':
-            return StudentGroup.objects.filter(teacher=self.request.user).order_by('-created_at')
+        if getattr(self, 'swagger_fake_view', False):
+            return self.queryset
+        user = getattr(self.request, 'user', None)
+        if user is None or getattr(user, 'is_anonymous', True):
+            return self.queryset
+        if getattr(user, 'user_type', None) == 'teacher':
+            return StudentGroup.objects.filter(teacher=user).order_by('-created_at')
         return StudentGroup.objects.none()
 
     def perform_create(self, serializer):
@@ -259,10 +272,18 @@ class StudentGroupViewSet(viewsets.ModelViewSet):
 class TestAssignmentViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     serializer_class = TestAssignmentSerializer
+    # safe default for schema generation
+    queryset = TestAssignment.objects.none()
     
     def get_queryset(self):
-        if self.request.user.user_type == 'teacher':
-            return TestAssignment.objects.filter(assigned_by=self.request.user).order_by('-assigned_at')
+        # during schema generation self.request or user may be missing/anonymous
+        if getattr(self, 'swagger_fake_view', False):
+            return self.queryset
+        user = getattr(self.request, 'user', None)
+        if user is None or getattr(user, 'is_anonymous', True):
+            return self.queryset
+        if getattr(user, 'user_type', None) == 'teacher':
+            return TestAssignment.objects.filter(assigned_by=user).order_by('-assigned_at')
         return TestAssignment.objects.none()
 
 
@@ -270,6 +291,8 @@ class QuestionViewSet(viewsets.ModelViewSet):
     """CRUD for questions for teachers (allows creating mcq, math_free, and image questions)."""
     permission_classes = [IsAuthenticated]
     serializer_class = QuestionSerializer
+    # provide a base queryset so schema generation can infer path parameter types
+    queryset = Question.objects.all()
 
     def get_queryset(self):
         if self.request.user.user_type == 'teacher':
@@ -402,9 +425,10 @@ class AssignTestToGroupView(APIView):
         except StudentGroup.DoesNotExist:
             return Response({'error': 'Group not found'}, status=status.HTTP_404_NOT_FOUND)
 
-class SearchStudentsView(APIView):
+class SearchStudentsView(GenericAPIView):
     permission_classes = [IsAuthenticated]
-    
+    serializer_class = StudentBasicSerializer
+
     def get(self, request):
         if request.user.user_type != 'teacher':
             return Response({'error': 'Only teachers can search students'}, 
@@ -418,20 +442,14 @@ class SearchStudentsView(APIView):
             Q(first_name__icontains=query) | 
             Q(last_name__icontains=query)
         )[:20]
-        
-        return Response([
-            {
-                'id': student.id,
-                'username': student.username,
-                'first_name': student.first_name,
-                'last_name': student.last_name,
-                'full_name': f"{student.first_name} {student.last_name}".strip() or student.username
-            }
-            for student in students
-        ])
+
+        serializer = self.get_serializer(students, many=True)
+        return Response(serializer.data)
 
 class TeacherAnalyticsViewSet(viewsets.ViewSet):
     permission_classes = [IsAuthenticated]
+    # No single serializer applies to these analytics endpoints; make intent explicit
+    serializer_class = None
     
     @action(detail=False, methods=['get'])
     def test_analytics(self, request):

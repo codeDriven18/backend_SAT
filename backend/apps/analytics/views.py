@@ -1,6 +1,7 @@
 from rest_framework import permissions
 from rest_framework.response import Response
-from rest_framework.views import APIView
+from rest_framework.generics import GenericAPIView
+from rest_framework import serializers
 from django.db.models import Avg, Max
 from django.utils import timezone
 from datetime import timedelta
@@ -8,8 +9,16 @@ from apps.users.models import User
 from apps.tests.models import TestGroup, StudentTestAttempt
 
 
-class DashboardStatsView(APIView):
+class DashboardStatsSerializer(serializers.Serializer):
+    overview = serializers.DictField(child=serializers.FloatField(), required=False)
+    performance = serializers.DictField(child=serializers.FloatField(), required=False)
+    recent_tests = serializers.ListField(child=serializers.DictField(), required=False)
+    performance_chart = serializers.ListField(child=serializers.DictField(), required=False)
+
+
+class DashboardStatsView(GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = DashboardStatsSerializer
 
     def get(self, request):
         user = request.user
@@ -50,7 +59,6 @@ class DashboardStatsView(APIView):
                 'score': attempt.percentage,
                 'date': attempt.completed_at.strftime('%Y-%m-%d') if attempt.completed_at else None
             })
-
         return Response({
             'overview': {
                 'total_assigned': total_assigned,
