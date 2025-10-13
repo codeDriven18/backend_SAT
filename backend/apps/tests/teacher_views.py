@@ -5,6 +5,7 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 from django.db.models import Q, Avg, Max, Min
+from apps.tests.serializers import DashboardStatsSerializer
 from drf_spectacular.utils import (
     extend_schema,
     extend_schema_view,
