@@ -1,65 +1,36 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, serializers
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
-from django.utils import timezone
-from django.db.models import Q
+from django.db.models import Q, Avg, Max, Min
+from drf_spectacular.utils import (
+    extend_schema,
+    extend_schema_view,
+    OpenApiParameter,
+    OpenApiTypes,
+)
 from .models import *
 from .serializers import *
-from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
-from drf_spectacular.types import OpenApiTypes
 
+
+# ───────────────────────────────────────────────
+# 🔹 Teacher Dashboard
+# ───────────────────────────────────────────────
+@extend_schema(
+    tags=['Teacher Dashboard'],
+    summary='Teacher Dashboard Statistics',
+    description='Get overview statistics for teacher dashboard including tests created, groups managed, and recent activity.',
+)
 class TeacherDashboardView(APIView):
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(
-        tags=['Teacher Dashboard'],
-        summary='Teacher Dashboard Statistics',
-        description='Get overview statistics for teacher dashboard including tests created, groups managed, and recent activity.',
-        responses={
-            200: {
-                'description': 'Dashboard statistics',
-                'content': {
-                    'application/json': {
-                        'example': {
-                            'total_tests': 15,
-                            'total_groups': 4,
-                            'total_students': 87,
-                            'active_assignments': 12,
-                            'recent_attempts': [
-                                {
-                                    'id': 123,
-                                    'student_name': 'john_doe',
-                                    'test_title': 'SAT Math Practice',
-                                    'status': 'completed',
-                                    'percentage': 85.5,
-                                    'started_at': '2024-01-15T10:30:00Z'
-                                }
-                            ]
-                        }
-                    }
-                }
-            },
-            403: {
-                'description': 'Only teachers can access this endpoint',
-                'content': {
-                    'application/json': {
-                        'example': {'error': 'Only teachers can access this'}
-                    }
-                }
-            }
-        }
-    )
-    
     def get(self, request):
         if request.user.user_type != 'teacher':
-            return Response({'error': 'Only teachers can access this'}, 
-                          status=status.HTTP_403_FORBIDDEN)
-        
-        # Dashboard statistics
+            return Response({'error': 'Only teachers can access this'},
+                            status=status.HTTP_403_FORBIDDEN)
+
         total_tests = TestGroup.objects.filter(created_by=request.user).count()
         total_groups = StudentGroup.objects.filter(teacher=request.user).count()
         total_students = User.objects.filter(
@@ -70,12 +41,10 @@ class TeacherDashboardView(APIView):
             assigned_by=request.user,
             is_active=True
         ).count()
-        
-        # Recent test attempts
         recent_attempts = StudentTestAttempt.objects.filter(
             test_group__created_by=request.user
         ).order_by('-started_at')[:5]
-        
+
         return Response({
             'total_tests': total_tests,
             'total_groups': total_groups,
@@ -84,88 +53,74 @@ class TeacherDashboardView(APIView):
             'recent_attempts': StudentTestAttemptSerializer(recent_attempts, many=True).data
         })
 
+
+# ───────────────────────────────────────────────
+# 🔹 Teacher Test Management
+# ───────────────────────────────────────────────
+@extend_schema_view(
+    list=extend_schema(summary="List teacher’s tests", tags=["Teacher Tests"]),
+    create=extend_schema(summary="Create a new test", tags=["Teacher Tests"]),
+    retrieve=extend_schema(summary="Get test by ID", tags=["Teacher Tests"]),
+    update=extend_schema(summary="Update a test", tags=["Teacher Tests"]),
+    destroy=extend_schema(summary="Delete a test", tags=["Teacher Tests"]),
+)
 class TeacherTestViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
-    serializer_class = TestGroupSerializer
-    queryset = TestGroup.objects.none()
-    
+
     def get_queryset(self):
-        if getattr(self, 'swagger_fake_view', False):
-            return self.queryset
-        user = getattr(self.request, 'user', None)
-        if user is None or getattr(user, 'is_anonymous', True):
-            return self.queryset
-        if getattr(user, 'user_type', None) == 'teacher':
-            return TestGroup.objects.filter(created_by=user).order_by('-created_at')
+        if self.request.user.user_type == 'teacher':
+            return TestGroup.objects.filter(created_by=self.request.user).order_by('-created_at')
         return TestGroup.objects.none()
-    
+
     def get_serializer_class(self):
         if self.action == 'create':
             return TestGroupCreateSerializer
         return TestGroupSerializer
-    
+
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
 
-# class TestLibraryViewSet(viewsets.ReadOnlyModelViewSet):
-#     """All tests visible to all teachers for reuse"""
-#     permission_classes = [IsAuthenticated]
-#     serializer_class = TestGroupLibrarySerializer
-    
-#     def get_queryset(self):
-#         if self.request.user.user_type == 'teacher':
-#             return TestGroup.objects.filter(is_active=True, is_public=True).order_by('-created_at')
-#         return TestGroup.objects.none()
-    
-#     @action(detail=True, methods=['get'])
-#     def preview(self, request, pk=None):
-#         """Preview test details with sections but no questions"""
-#         test = self.get_object()
-#         sections_data = []
-        
-#         for section in test.sections.all():
-#             sections_data.append({
-#                 'id': section.id,
-#                 'name': section.name,
-#                 'time_limit': section.time_limit,
-#                 'question_count': section.questions.count()
-#             })
-        
-#         return Response({
-#             'id': test.id,
-#             'title': test.title,
-#             'description': test.description,
-#             'created_by': test.created_by.username,
-#             'difficulty': test.difficulty,
-#             'total_marks': test.total_marks,
-#             'passing_marks': test.passing_marks,
-#             'created_at': test.created_at,
-#             'sections': sections_data
-#         })
+    def create(self, request, *args, **kwargs):
+        # ✅ Use the normal create logic but override the response
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        # Save and set created_by manually, since we overrode perform_create
+        test_group = serializer.save(created_by=request.user)
+
+        # ✅ Now use the detailed serializer for the response
+        detail_serializer = TestGroupDetailSerializer(test_group)
+        return Response(detail_serializer.data, status=status.HTTP_201_CREATED)
 
 
+# ───────────────────────────────────────────────
+# 🔹 Test Library (read-only)
+# ───────────────────────────────────────────────
+@extend_schema_view(
+    list=extend_schema(summary="List all public tests", tags=["Test Library"]),
+    retrieve=extend_schema(summary="Get specific test", tags=["Test Library"]),
+)
 class TestLibraryViewSet(viewsets.ReadOnlyModelViewSet):
-    """All tests visible to all teachers for reuse"""
     permission_classes = [IsAuthenticated]
     serializer_class = TestGroupLibrarySerializer
 
     def get_queryset(self):
-        user = self.request.user
-       
         return (
             TestGroup.objects
             .filter(is_active=True)
-            # .filter(Q(is_public=True) | Q(created_by=user))
-            
             .select_related("created_by")
             .prefetch_related("sections", "sections__questions")
             .order_by("-created_at")
         )
 
+    @extend_schema(
+        tags=["Test Library"],
+        summary="Preview a test (sections only)",
+        responses={200: OpenApiTypes.OBJECT},
+    )
     @action(detail=True, methods=['get'])
     def preview(self, request, pk=None):
-        """Preview test details with sections but no questions"""
-        test = self.get_object()  
+        test = self.get_object()
         sections_data = [{
             'id': s.id,
             'name': s.name,
@@ -185,310 +140,252 @@ class TestLibraryViewSet(viewsets.ReadOnlyModelViewSet):
         })
 
 
+# ───────────────────────────────────────────────
+# 🔹 Student Groups
+# ───────────────────────────────────────────────
+@extend_schema_view(
+    list=extend_schema(summary="List student groups", tags=["Student Groups"]),
+    create=extend_schema(summary="Create student group", tags=["Student Groups"]),
+)
 class StudentGroupViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     serializer_class = StudentGroupSerializer
-    queryset = StudentGroup.objects.none()
-    
+
     def get_queryset(self):
-        if getattr(self, 'swagger_fake_view', False):
-            return self.queryset
-        user = getattr(self.request, 'user', None)
-        if user is None or getattr(user, 'is_anonymous', True):
-            return self.queryset
-        if getattr(user, 'user_type', None) == 'teacher':
-            return StudentGroup.objects.filter(teacher=user).order_by('-created_at')
+        if self.request.user.user_type == 'teacher':
+            return StudentGroup.objects.filter(teacher=self.request.user).order_by('-created_at')
         return StudentGroup.objects.none()
 
     def perform_create(self, serializer):
         serializer.save(teacher=self.request.user)
 
+    @extend_schema(
+        tags=["Student Groups"],
+        summary="Add student to group",
+        request=AddRemoveStudentSerializer,
+        responses={200: OpenApiTypes.OBJECT},
+    )
     @action(detail=True, methods=['post'], serializer_class=AddRemoveStudentSerializer)
     def add_student(self, request, pk=None):
         serializer = AddRemoveStudentSerializer(data=request.data)
         if serializer.is_valid():
             student_id = serializer.validated_data['student_id']
             group = self.get_object()
-            
             try:
-                from django.contrib.auth import get_user_model
-                User = get_user_model()
                 student = User.objects.get(id=student_id, user_type='student')
-                
                 if student in group.students.all():
-                    return Response({
-                        'error': f'Student {student.username} is already in this group'
-                    }, status=status.HTTP_400_BAD_REQUEST)
-                
+                    return Response({'error': 'Student already in group'}, status=400)
                 group.students.add(student)
-                return Response({
-                    'message': f'Student {student.username} added to group successfully',
-                    'student': {
-                        'id': student.id,
-                        'username': student.username,
-                        'full_name': f"{student.first_name} {student.last_name}".strip()
-                    }
-                })
+                return Response({'message': f'Student {student.username} added'})
             except User.DoesNotExist:
-                return Response({
-                    'error': 'Student not found'
-                }, status=status.HTTP_404_NOT_FOUND)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'error': 'Student not found'}, status=404)
+        return Response(serializer.errors, status=400)
 
+    @extend_schema(
+        tags=["Student Groups"],
+        summary="Remove student from group",
+        request=AddRemoveStudentSerializer,
+        responses={200: OpenApiTypes.OBJECT},
+    )
     @action(detail=True, methods=['post'], serializer_class=AddRemoveStudentSerializer)
     def remove_student(self, request, pk=None):
         serializer = AddRemoveStudentSerializer(data=request.data)
         if serializer.is_valid():
             student_id = serializer.validated_data['student_id']
             group = self.get_object()
-            
             try:
-                from django.contrib.auth import get_user_model
-                User = get_user_model()
                 student = User.objects.get(id=student_id, user_type='student')
-                
                 if student not in group.students.all():
-                    return Response({
-                        'error': f'Student {student.username} is not in this group'
-                    }, status=status.HTTP_400_BAD_REQUEST)
-                
+                    return Response({'error': 'Student not in this group'}, status=400)
                 group.students.remove(student)
-                return Response({
-                    'message': f'Student {student.username} removed from group successfully',
-                    'student': {
-                        'id': student.id,
-                        'username': student.username,
-                        'full_name': f"{student.first_name} {student.last_name}".strip()
-                    }
-                })
+                return Response({'message': f'Student {student.username} removed'})
             except User.DoesNotExist:
-                return Response({
-                    'error': 'Student not found'
-                }, status=status.HTTP_404_NOT_FOUND)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'error': 'Student not found'}, status=404)
+        return Response(serializer.errors, status=400)
 
+
+# ───────────────────────────────────────────────
+# 🔹 Test Assignments
+# ───────────────────────────────────────────────
+@extend_schema_view(
+    list=extend_schema(summary="List assigned tests", tags=["Test Assignments"]),
+    create=extend_schema(summary="Assign new test", tags=["Test Assignments"]),
+)
 class TestAssignmentViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     serializer_class = TestAssignmentSerializer
-    # safe default for schema generation
-    queryset = TestAssignment.objects.none()
-    
-    def get_queryset(self):
-        # during schema generation self.request or user may be missing/anonymous
-        if getattr(self, 'swagger_fake_view', False):
-            return self.queryset
-        user = getattr(self.request, 'user', None)
-        if user is None or getattr(user, 'is_anonymous', True):
-            return self.queryset
-        if getattr(user, 'user_type', None) == 'teacher':
-            return TestAssignment.objects.filter(assigned_by=user).order_by('-assigned_at')
-        return TestAssignment.objects.none()
-
-
-class QuestionViewSet(viewsets.ModelViewSet):
-    """CRUD for questions for teachers (allows creating mcq, math_free, and image questions)."""
-    permission_classes = [IsAuthenticated]
-    serializer_class = QuestionSerializer
-    # provide a base queryset so schema generation can infer path parameter types
-    queryset = Question.objects.all()
 
     def get_queryset(self):
         if self.request.user.user_type == 'teacher':
-            # teachers can manage questions they created via test_group.created_by
+            return TestAssignment.objects.filter(assigned_by=self.request.user).order_by('-assigned_at')
+        return TestAssignment.objects.none()
+
+
+# ───────────────────────────────────────────────
+# 🔹 Questions
+# ───────────────────────────────────────────────
+@extend_schema_view(
+    list=extend_schema(summary="List all questions", tags=["Questions"]),
+    create=extend_schema(summary="Create a new question", tags=["Questions"]),
+)
+class QuestionViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    serializer_class = QuestionSerializer
+
+    def get_queryset(self):
+        if self.request.user.user_type == 'teacher':
             return Question.objects.filter(test_group__created_by=self.request.user).order_by('-order')
         return Question.objects.none()
 
     def create(self, request, *args, **kwargs):
-        # allow multipart for image upload in question creation
         serializer = QuestionCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        q_data = serializer.validated_data
-        # create question
-        question = Question.objects.create(
-            question_text=q_data.get('question_text'),
-            passage_text=q_data.get('passage_text'),
-            image=q_data.get('image'),
-            marks=q_data.get('marks', 1),
-            order=q_data.get('order', 0),
-            # section=q_data.get('section'),
-            question_type=q_data.get('question_type', 'mcq'),
-            correct_answers=q_data.get('correct_answers', [])
-        )
+        question = serializer.save()
+        return Response(QuestionSerializer(question).data, status=201)
 
-        # create choices if present
-        for c in q_data.get('choices') or []:
-            Choice.objects.create(question=question, **c)
-
-        return Response(QuestionSerializer(question).data, status=status.HTTP_201_CREATED)
-
-    @action(detail=False, methods=['post'], url_path='upload-image')
+    @extend_schema(
+        tags=["Questions"],
+        summary="Upload image for question",
+        parameters=[
+            OpenApiParameter(name="question_id", location=OpenApiParameter.QUERY, required=True, type=OpenApiTypes.INT),
+        ],
+        responses={200: OpenApiTypes.OBJECT},
+    )
+    @action(detail=False, methods=['patch'], url_path='upload-image')
     def upload_image(self, request):
-        # Expected query param ?question_id=NN
         question_id = request.query_params.get('question_id')
         if not question_id:
-            return Response({'error': 'question_id required'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'question_id required'}, status=400)
         try:
             question = Question.objects.get(id=question_id)
         except Question.DoesNotExist:
-            return Response({'error': 'Question not found'}, status=status.HTTP_404_NOT_FOUND)
-
+            return Response({'error': 'Question not found'}, status=404)
         file = request.FILES.get('image')
         if not file:
-            return Response({'error': 'No image file provided'}, status=status.HTTP_400_BAD_REQUEST)
-
+            return Response({'error': 'No image provided'}, status=400)
         question.image = file
         question.save()
-        return Response({'message': 'Image uploaded', 'image_url': question.image.url})
+        return Response({'message': 'Image uploaded', 'image': question.image.url})
 
+
+# ───────────────────────────────────────────────
+# 🔹 Assign Test to Group
+# ───────────────────────────────────────────────
+@extend_schema(
+    tags=["Teacher Assignments"],
+    summary="Assign test to a student group",
+    request={
+        'application/json': {
+            'type': 'object',
+            'properties': {
+                'test_id': {'type': 'integer', 'example': 5},
+                'group_id': {'type': 'integer', 'example': 2},
+            },
+            'required': ['test_id', 'group_id']
+        }
+    },
+    responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT}
+)
 class AssignTestToGroupView(APIView):
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(
-        tags=['Teacher Assignments'],
-        summary='Assign Test to Group',
-        description='Assign a test from the library to one of teacher\'s groups. This makes the test appear on all group members\' dashboards.',
-        request={
-            'application/json': {
-                'type': 'object',
-                'properties': {
-                    'test_id': {'type': 'integer', 'example': 5},
-                    'group_id': {'type': 'integer', 'example': 2}
-                },
-                'required': ['test_id', 'group_id']
-            }
-        },
-        responses={
-            200: {
-                'description': 'Test assigned successfully',
-                'content': {
-                    'application/json': {
-                        'example': {
-                            'message': 'Test "SAT Math Practice" assigned to group "Class A"',
-                            'assignment_id': 45,
-                            'students_count': 25
-                        }
-                    }
-                }
-            },
-            400: {
-                'description': 'Test already assigned to this group',
-                'content': {
-                    'application/json': {
-                        'example': {'error': 'Test already assigned to this group'}
-                    }
-                }
-            },
-            404: {
-                'description': 'Test or group not found',
-                'content': {
-                    'application/json': {
-                        'example': {'error': 'Test not found'}
-                    }
-                }
-            }
-        }
-    )
-    
     def post(self, request):
         if request.user.user_type != 'teacher':
-            return Response({'error': 'Only teachers can assign tests'}, 
-                          status=status.HTTP_403_FORBIDDEN)
-        
+            return Response({'error': 'Only teachers can assign tests'}, status=403)
         test_id = request.data.get('test_id')
         group_id = request.data.get('group_id')
-        
         try:
             test_group = TestGroup.objects.get(id=test_id, is_active=True)
             student_group = StudentGroup.objects.get(id=group_id, teacher=request.user)
-            
-            # Check if already assigned
             if TestAssignment.objects.filter(test_group=test_group, student_group=student_group).exists():
-                return Response({'error': 'Test already assigned to this group'}, 
-                              status=status.HTTP_400_BAD_REQUEST)
-            
+                return Response({'error': 'Already assigned'}, status=400)
             assignment = TestAssignment.objects.create(
                 test_group=test_group,
                 student_group=student_group,
                 assigned_by=request.user
             )
-            
             return Response({
-                'message': f'Test "{test_group.title}" assigned to group "{student_group.name}"',
+                'message': f'Test "{test_group.title}" assigned to "{student_group.name}"',
                 'assignment_id': assignment.id,
                 'students_count': student_group.student_count
             })
-            
         except TestGroup.DoesNotExist:
-            return Response({'error': 'Test not found'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'error': 'Test not found'}, status=404)
         except StudentGroup.DoesNotExist:
-            return Response({'error': 'Group not found'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'error': 'Group not found'}, status=404)
 
-class SearchStudentsView(GenericAPIView):
+
+# ───────────────────────────────────────────────
+# 🔹 Search Students
+# ───────────────────────────────────────────────
+class DummySerializer(serializers.Serializer):
+    """Used for swagger doc on simple GET views."""
+    pass
+
+
+@extend_schema(
+    tags=["Teacher Tools"],
+    summary="Search students by username or name",
+    parameters=[
+        OpenApiParameter(name="q", type=OpenApiTypes.STR, location=OpenApiParameter.QUERY, required=False),
+    ],
+    responses={200: OpenApiTypes.OBJECT},
+)
+class SearchStudentsView(APIView):
     permission_classes = [IsAuthenticated]
-    serializer_class = StudentBasicSerializer
+    serializer_class = DummySerializer
 
     def get(self, request):
         if request.user.user_type != 'teacher':
-            return Response({'error': 'Only teachers can search students'}, 
-                          status=status.HTTP_403_FORBIDDEN)
-        
+            return Response({'error': 'Only teachers can search students'}, status=403)
         query = request.query_params.get('q', '')
         students = User.objects.filter(
             user_type='student'
         ).filter(
-            Q(username__icontains=query) | 
-            Q(first_name__icontains=query) | 
-            Q(last_name__icontains=query)
+            Q(username__icontains=query) | Q(first_name__icontains=query) | Q(last_name__icontains=query)
         )[:20]
+        return Response([
+            {
+                'id': s.id,
+                'username': s.username,
+                'full_name': f"{s.first_name} {s.last_name}".strip() or s.username
+            } for s in students
+        ])
 
-        serializer = self.get_serializer(students, many=True)
-        return Response(serializer.data)
 
+# ───────────────────────────────────────────────
+# 🔹 Teacher Analytics
+# ───────────────────────────────────────────────
+@extend_schema_view(
+    test_analytics=extend_schema(
+        tags=["Teacher Analytics"],
+        summary="Get analytics for specific test",
+        parameters=[
+            OpenApiParameter(name="test_id", location=OpenApiParameter.QUERY, required=True, type=OpenApiTypes.INT),
+        ],
+        responses={200: OpenApiTypes.OBJECT},
+    )
+)
 class TeacherAnalyticsViewSet(viewsets.ViewSet):
     permission_classes = [IsAuthenticated]
-    # No single serializer applies to these analytics endpoints; make intent explicit
-    serializer_class = None
-    
+
     @action(detail=False, methods=['get'])
     def test_analytics(self, request):
-        """Analytics for a specific test"""
         test_id = request.query_params.get('test_id')
         if not test_id:
-            return Response({'error': 'test_id parameter required'}, 
-                          status=status.HTTP_400_BAD_REQUEST)
-        
+            return Response({'error': 'test_id parameter required'}, status=400)
         test = get_object_or_404(TestGroup, id=test_id, created_by=request.user)
         attempts = StudentTestAttempt.objects.filter(test_group=test, status='completed')
-        
         if not attempts.exists():
-            return Response({
-                'test_title': test.title,
-                'total_attempts': 0,
-                'analytics': 'No completed attempts yet'
-            })
-        
-        # Calculate statistics
-        from django.db.models import Avg, Max, Min
-        stats = attempts.aggregate(
-            avg_score=Avg('percentage'),
-            max_score=Max('percentage'),
-            min_score=Min('percentage'),
-            avg_total_score=Avg('total_score')
-        )
-        
-        # Pass rate
+            return Response({'test_title': test.title, 'analytics': 'No completed attempts yet'})
+
+        stats = attempts.aggregate(avg_score=Avg('percentage'), max_score=Max('percentage'),
+                                   min_score=Min('percentage'), avg_total_score=Avg('total_score'))
         pass_rate = (attempts.filter(total_score__gte=test.passing_marks).count() / attempts.count() * 100)
-        
-        # Section-wise analytics
         section_stats = []
         for section in test.sections.all():
             section_attempts = SectionAttempt.objects.filter(
-                test_attempt__in=attempts,
-                section=section,
-                status='completed'
-            )
+                test_attempt__in=attempts, section=section, status='completed')
             if section_attempts.exists():
                 section_avg = section_attempts.aggregate(avg=Avg('score'))['avg']
                 section_stats.append({
@@ -496,7 +393,7 @@ class TeacherAnalyticsViewSet(viewsets.ViewSet):
                     'average_score': round(section_avg, 2),
                     'total_marks': section_attempts.first().total_marks
                 })
-        
+
         return Response({
             'test_title': test.title,
             'total_attempts': attempts.count(),
@@ -509,6 +406,3 @@ class TeacherAnalyticsViewSet(viewsets.ViewSet):
                 attempts.order_by('-completed_at')[:10], many=True
             ).data
         })
-
-        if getattr(self, "swagger_fake_view", False):
-            return Model.objects.none()

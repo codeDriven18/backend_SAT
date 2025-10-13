@@ -2,8 +2,6 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.generics import GenericAPIView
-from rest_framework import serializers as drf_serializers
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -13,7 +11,6 @@ from .models import *
 from .serializers import *
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
 from drf_spectacular.types import OpenApiTypes
-
 
 class StudentDashboardViewSet(viewsets.ViewSet):
     permission_classes = [IsAuthenticated]
@@ -122,9 +119,8 @@ class StudentDashboardViewSet(viewsets.ViewSet):
         
         return Response(result)
 
-class StartTestView(GenericAPIView):
+class StartTestView(APIView):
     permission_classes = [IsAuthenticated]
-    serializer_class = EmptySerializer
     
     @extend_schema(
         tags=['Student Tests'],
@@ -236,9 +232,8 @@ class StartTestView(GenericAPIView):
             ]
         })
 
-class StartSectionView(GenericAPIView):
+class StartSectionView(APIView):
     permission_classes = [IsAuthenticated]
-    serializer_class = EmptySerializer
     
     def post(self, request, test_id, section_id):
         test = get_object_or_404(TestGroup, id=test_id)
@@ -274,9 +269,8 @@ class StartSectionView(GenericAPIView):
             'time_limit': section.time_limit
         })
 
-class GetSectionQuestionsView(GenericAPIView):
+class GetSectionQuestionsView(APIView):
     permission_classes = [IsAuthenticated]
-    serializer_class = EmptySerializer
 
     @extend_schema(
         tags=['Student Tests'],
@@ -382,9 +376,8 @@ class GetSectionQuestionsView(GenericAPIView):
             'questions': questions_data
         })
 
-class SubmitAnswerView(GenericAPIView):
+class SubmitAnswerView(APIView):
     permission_classes = [IsAuthenticated]
-    serializer_class = AnswerInputSerializer
     
     def post(self, request, test_id):
         test = get_object_or_404(TestGroup, id=test_id)
@@ -411,9 +404,8 @@ class SubmitAnswerView(GenericAPIView):
 
         return Response({'message': 'Answer saved successfully'})
 
-class CompleteSectionView(GenericAPIView):
+class CompleteSectionView(APIView):
     permission_classes = [IsAuthenticated]
-    serializer_class = EmptySerializer
     
     def post(self, request, test_id, section_id):
         test = get_object_or_404(TestGroup, id=test_id)
@@ -450,9 +442,8 @@ class CompleteSectionView(GenericAPIView):
         else:
             return Response({'message': 'Section completed', 'next_section': None})
 
-class CompleteTestView(GenericAPIView):
+class CompleteTestView(APIView):
     permission_classes = [IsAuthenticated]
-    serializer_class = EmptySerializer
     
     def post(self, request, test_id):
         test = get_object_or_404(TestGroup, id=test_id)
@@ -474,9 +465,8 @@ class CompleteTestView(GenericAPIView):
             'percentage': attempt.percentage
         })
 
-class TestResultsView(GenericAPIView):
+class TestResultsView(APIView):
     permission_classes = [IsAuthenticated]
-    serializer_class = EmptySerializer
     
     def get(self, request, test_id):
         test = get_object_or_404(TestGroup, id=test_id)
@@ -505,10 +495,9 @@ class TestResultsView(GenericAPIView):
             'passed': attempt.total_score >= test.passing_marks
         })
 
-class TestReviewView(GenericAPIView):
+class TestReviewView(APIView):
     """Allow students to review their completed test with correct/incorrect answers"""
     permission_classes = [IsAuthenticated]
-    serializer_class = EmptySerializer
 
     @extend_schema(
         tags=['Student Results'],
@@ -626,22 +615,14 @@ class TestReviewView(GenericAPIView):
 class StudentTestAttemptViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticated]
     serializer_class = StudentTestAttemptSerializer
-    queryset = StudentTestAttempt.objects.none()
     
     def get_queryset(self):
-        if getattr(self, 'swagger_fake_view', False):
-            return self.queryset
-        user = getattr(self.request, 'user', None)
-        if user is None or getattr(user, 'is_anonymous', True):
-            return self.queryset
-        if getattr(user, 'user_type', None) == 'student':
-            return StudentTestAttempt.objects.filter(student=user)
+        if self.request.user.user_type == 'student':
+            return StudentTestAttempt.objects.filter(student=self.request.user)
         return StudentTestAttempt.objects.none()
 
-class SubmitBulkAnswersView(GenericAPIView):
+class SubmitBulkAnswersView(APIView):
     permission_classes = [IsAuthenticated]
-    serializer_class = BulkAnswersInputSerializer
-    queryset = StudentTestAttempt.objects.none()
 
     @extend_schema(
     request=BulkAnswersInputSerializer,
@@ -735,9 +716,8 @@ class SubmitBulkAnswersView(GenericAPIView):
         out = StudentAnswerOutSerializer(saved, many=True).data
         return Response({'message': 'Answers saved', 'saved': out}, status=status.HTTP_200_OK)
 
-class SectionQuestionsView(GenericAPIView):
+class SectionQuestionsView(APIView):
     permission_classes = [IsAuthenticated]
-    serializer_class = EmptySerializer
 
     def get(self, request, test_id, section_id):
         test = get_object_or_404(TestGroup, id=test_id)
@@ -761,4 +741,5 @@ class SectionQuestionsView(GenericAPIView):
             },
             "questions": questions_data
         })
-
+        if getattr(self, "swagger_fake_view", False):
+            return Model.objects.none()

@@ -1,13 +1,5 @@
-from h11 import Response
 from rest_framework import serializers
-from rest_framework.response import Response
-from drf_spectacular.utils import extend_schema_field
-from rest_framework import serializers
-
 from drf_spectacular.utils import extend_schema_serializer, OpenApiExample
-from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
-from django.shortcuts import get_object_or_404
 from .models import *
 from apps.users.models import User
 
@@ -26,23 +18,10 @@ class ChoiceForStudentSerializer(serializers.ModelSerializer):
         fields = ['id', 'choice_text', 'choice_label']
 
 class QuestionSerializer(serializers.ModelSerializer):
-    image_url = serializers.SerializerMethodField(read_only=True)
-
     class Meta:
         model = Question
-        fields = [
-            'id', 'question_text', 'passage_text', 'image_url', 'image',
-            'test_group', 'section', 'marks', 'order', 'question_type', 'correct_answers'
-        ]
+        fields = ['id', 'question_text', 'image', 'test_group', 'question_text', 'passage_text', 'marks', 'order', 'section', 'question_type', 'correct_answers']
 
-    @extend_schema_field(serializers.URLField())
-    def get_image_url(self, obj):
-        try:
-            if obj.image and hasattr(obj.image, 'url'):
-                return obj.image.url
-        except Exception:
-            pass
-        return None
 
 class QuestionForStudentSerializer(serializers.ModelSerializer):
     """Questions for students - no correct answers"""
@@ -51,9 +30,8 @@ class QuestionForStudentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Question
-        fields = ['id', 'question_text', 'passage_text', 'marks', 'order', 'choices', 'selected_choice_id']
+        fields = ['id', 'question_text','image', 'passage_text', 'marks', 'order', 'choices', 'selected_choice_id']
 
-    @extend_schema_field(serializers.IntegerField(allow_null=True))
     def get_selected_choice_id(self, obj):
         attempt = self.context.get('attempt')
         if not attempt:
@@ -63,9 +41,6 @@ class QuestionForStudentSerializer(serializers.ModelSerializer):
 
 class QuestionCreateSerializer(serializers.ModelSerializer):
     choices = ChoiceSerializer(many=True, required=False)
-    # accept an uploaded image on create/update; provide image_url read-only
-    image = serializers.ImageField(required=False, allow_null=True)
-    image_url = serializers.SerializerMethodField(read_only=True)
     
     class Meta:
         model = Question
@@ -73,7 +48,6 @@ class QuestionCreateSerializer(serializers.ModelSerializer):
             'question_text',
             'passage_text',
             'image',
-            'image_url',
             'marks',
             'order',
             'question_type',
@@ -112,15 +86,6 @@ class QuestionCreateSerializer(serializers.ModelSerializer):
 
         return data
 
-    @extend_schema_field(serializers.URLField())
-    def get_image_url(self, obj):
-        try:
-            if obj and getattr(obj, 'image', None) and hasattr(obj.image, 'url'):
-                return obj.image.url
-        except Exception:
-            pass
-        return None
-
 class TestSectionSerializer(serializers.ModelSerializer):
     questions = QuestionSerializer(many=True, read_only=True)
     question_count = serializers.SerializerMethodField()
@@ -129,7 +94,6 @@ class TestSectionSerializer(serializers.ModelSerializer):
         model = TestSection
         fields = ['id', 'name', 'description', 'time_limit', 'order', 'questions', 'question_count']
     
-    @extend_schema_field(serializers.IntegerField())
     def get_question_count(self, obj):
         return obj.questions.count()
 
@@ -184,6 +148,7 @@ class TestGroupCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = TestGroup
         fields = [
+            'id',
             'title', 'description', 'difficulty', 'passing_marks', 
             'is_active', 'is_public', 'sections'
         ]
@@ -315,6 +280,9 @@ class TestGroupCreateSerializer(serializers.ModelSerializer):
                     Choice.objects.create(question=question, **choice_data)
         
         return test_group
+    
+    #  def to_representation(self, instance):
+    #     return TestGroupDetailSerializer(instance).data
 
 class TestGroupLibrarySerializer(serializers.ModelSerializer):
     """For test library view - basic info only"""
@@ -329,11 +297,9 @@ class TestGroupLibrarySerializer(serializers.ModelSerializer):
             'total_marks', 'passing_marks', 'created_at', 'section_count', 'question_count'
         ]
     
-    @extend_schema_field(serializers.IntegerField())
     def get_section_count(self, obj):
         return obj.sections.count()
     
-    @extend_schema_field(serializers.IntegerField())
     def get_question_count(self, obj):
         return sum(section.questions.count() for section in obj.sections.all())
 
@@ -344,14 +310,13 @@ class StudentBasicSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'username', 'first_name', 'last_name', 'full_name']
     
-    @extend_schema_field(serializers.CharField())
     def get_full_name(self, obj):
         return f"{obj.first_name} {obj.last_name}".strip() or obj.username
 
 class StudentGroupSerializer(serializers.ModelSerializer):
     students = StudentBasicSerializer(many=True, read_only=True)
     teacher_name = serializers.CharField(source='teacher.username', read_only=True)
-    student_count = serializers.IntegerField(read_only=True)
+    student_count = serializers.ReadOnlyField()
     
     class Meta:
         model = StudentGroup
@@ -429,7 +394,6 @@ class AddRemoveStudentSerializer(serializers.Serializer):
 class AnswerInputSerializer(serializers.Serializer):
     question_id = serializers.IntegerField()
     choice_id = serializers.IntegerField(required=False, allow_null=True)
-    text_answer = serializers.CharField(required=False, allow_null=True)
 
 class BulkAnswersInputSerializer(serializers.Serializer):
     answers = AnswerInputSerializer(many=True)
@@ -446,35 +410,3 @@ class StudentAnswerOutSerializer(serializers.ModelSerializer):
             'selected_choice_text', 'selected_choice_label',
             'is_correct', 'answered_at'
         ]
-        
-class SectionQuestionsView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request, test_id, section_id):
-        if getattr(self, "swagger_fake_view", False):
-            return Response([])
-
-        test = get_object_or_404(TestGroup, id=test_id)
-        section = get_object_or_404(TestSection, id=section_id, test_group=test)
-        attempt = get_object_or_404(StudentTestAttempt, test_group=test, student=request.user)
-        section_attempt, _ = SectionAttempt.objects.get_or_create(test_attempt=attempt, section=section)
-
-        questions_qs = section.questions.all().prefetch_related('choices')
-        questions_data = QuestionForStudentSerializer(
-            questions_qs, many=True, context={'attempt': attempt}
-        ).data
-
-        return Response({
-            "section": {
-                "id": section.id,
-                "name": section.name,
-                "time_limit": section.time_limit,
-                "started_at": section_attempt.started_at,
-            },
-            "questions": questions_data
-        })
-        
-
-class EmptySerializer(serializers.Serializer):
-    """Used as a placeholder serializer for endpoints that have no request body."""
-    pass

@@ -1,20 +1,13 @@
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.generics import ListAPIView
+from rest_framework.response import Response
 from .models import Notification
 from .serializers import NotificationSerializer
 
 
-class NotificationListView(ListAPIView):
-    permission_classes = [IsAuthenticated]
-    serializer_class = NotificationSerializer
-    # provide a safe default queryset so schema generator can infer model
-    queryset = Notification.objects.none()
-
-    def get_queryset(self):
-        # during schema generation self.request may be missing or have AnonymousUser
-        if getattr(self, 'swagger_fake_view', False):
-            return self.queryset
-        user = getattr(self.request, 'user', None)
-        if user is None or getattr(user, 'is_anonymous', True):
-            return self.queryset
-        return Notification.objects.filter(user=user).order_by('-created_at')
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def notification_list(request):
+    notes = Notification.objects.filter(user=request.user).order_by('-created_at')
+    serializer = NotificationSerializer(notes, many=True)
+    return Response(serializer.data)

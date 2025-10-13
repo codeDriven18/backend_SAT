@@ -69,31 +69,31 @@ TEMPLATES = [
 WSGI_APPLICATION = 'eduplatform.wsgi.application'
 
 
-if os.getenv('RENDER'):
-    DATABASES = {
-        'default': dj_database_url.config(conn_max_age=600, ssl_require=True)
-    }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': 'postgresql_37ip',
-            'USER': 'bushstep',
-            'PASSWORD': 'NKbxLpHLAhTIsxe9FAxcUGr2jqjV7zwv',
-            'HOST': 'dpg-d3ipdm6mcj7s739ehngg-a.oregon-postgres.render.com',
-            'PORT': '5432',
-            'OPTIONS': {
-                'sslmode': 'require',
-            },
-        }
-    }
-
-# DATABASES = {
+# if os.getenv('RENDER'):
+#     DATABASES = {
+#         'default': dj_database_url.config(conn_max_age=600, ssl_require=True)
+#     }
+# else:
+#     DATABASES = {
 #     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': 'postgresql_e4kf',
+#         'USER': 'feruzbek',
+#         'PASSWORD': 'qLrAuVedJVtNozZjrTBOgjdMwnnR0cjc',
+#         'HOST': 'dpg-d30ljq8gjchc73f0h530-a.oregon-postgres.render.com',
+#         'PORT': '5432',
+#         'OPTIONS': {
+#             'sslmode': 'require',
+#         },
 #     }
 # }
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
+}
 
 # STATIC_URL = '/static/'
 # STATICFILES_DIRS = [BASE_DIR / "static"]
@@ -121,8 +121,8 @@ USE_TZ = True
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / "static"]
+
 # Media (user uploads)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / "media"
