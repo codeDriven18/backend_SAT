@@ -26,6 +26,7 @@ from .serializers import *
 class TeacherDashboardView(APIView):
     permission_classes = [IsAuthenticated]
 
+    serializer_class = DashboardStatsSerializer
     def get(self, request):
         if request.user.user_type != 'teacher':
             return Response({'error': 'Only teachers can access this'},

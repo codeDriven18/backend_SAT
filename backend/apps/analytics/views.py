@@ -11,6 +11,7 @@ from apps.tests.models import TestGroup, StudentTestAttempt
 class DashboardStatsView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+    serializer_class = DashboardStatsSerializer
     def get(self, request):
         user = request.user
 
