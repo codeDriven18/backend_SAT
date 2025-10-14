@@ -24,13 +24,24 @@ class QuestionSerializer(serializers.ModelSerializer):
 
 
 class QuestionForStudentSerializer(serializers.ModelSerializer):
-    """Questions for students - no correct answers"""
+    """Questions for students - includes image and question_type"""
     choices = ChoiceForStudentSerializer(many=True, read_only=True)
     selected_choice_id = serializers.SerializerMethodField()
+    image = serializers.SerializerMethodField()
 
     class Meta:
         model = Question
-        fields = ['id', 'question_text','image', 'passage_text', 'marks', 'order', 'choices', 'selected_choice_id']
+        fields = [
+            'id',
+            'question_text',
+            'passage_text',
+            'marks',
+            'order',
+            'question_type',
+            'choices',
+            'selected_choice_id',
+            'image',
+        ]
 
     def get_selected_choice_id(self, obj):
         attempt = self.context.get('attempt')
@@ -38,6 +49,13 @@ class QuestionForStudentSerializer(serializers.ModelSerializer):
             return None
         ans = obj.studentanswer_set.filter(test_attempt=attempt).only('selected_choice_id').first()
         return ans.selected_choice_id if ans else None
+
+    def get_image(self, obj):
+        request = self.context.get('request')
+        if obj.image:
+            # return full absolute URL (e.g. http://127.0.0.1:8000/media/uploads/questions/xyz.jpg)
+            return request.build_absolute_uri(obj.image.url) if request else obj.image.url
+        return None
 
 class QuestionCreateSerializer(serializers.ModelSerializer):
     choices = ChoiceSerializer(many=True, required=False)
@@ -394,6 +412,8 @@ class AddRemoveStudentSerializer(serializers.Serializer):
 class AnswerInputSerializer(serializers.Serializer):
     question_id = serializers.IntegerField()
     choice_id = serializers.IntegerField(required=False, allow_null=True)
+    text_answer = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+
 
 class BulkAnswersInputSerializer(serializers.Serializer):
     answers = AnswerInputSerializer(many=True)
@@ -402,11 +422,20 @@ class StudentAnswerOutSerializer(serializers.ModelSerializer):
     question_text = serializers.CharField(source='question.question_text', read_only=True)
     selected_choice_text = serializers.CharField(source='selected_choice.choice_text', read_only=True)
     selected_choice_label = serializers.CharField(source='selected_choice.choice_label', read_only=True)
+    question_type = serializers.CharField(source='question.question_type')
+    correct_answers = serializers.SerializerMethodField()
+    student_text_answer = serializers.CharField(source='text_answer', allow_null=True, allow_blank=True)
+
 
     class Meta:
         model = StudentAnswer
         fields = [
-            'question', 'question_text', 'selected_choice', 
-            'selected_choice_text', 'selected_choice_label',
+            'question','question_type', 'question_text', 'selected_choice', 
+            'selected_choice_text', 'selected_choice_label', 'text_answer',  'student_text_answer', 'correct_answers',
             'is_correct', 'answered_at'
         ]
+
+    def get_correct_answers(self, obj):
+        if obj.question.question_type == "math_free":
+            return obj.question.correct_answers or []
+        return None

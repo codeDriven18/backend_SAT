@@ -8,7 +8,6 @@ from .serializers import NotificationSerializer
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def notification_list(request):
-    serializer_class = NotificationSerializer
     notes = Notification.objects.filter(user=request.user).order_by('-created_at')
     serializer = NotificationSerializer(notes, many=True)
     return Response(serializer.data)

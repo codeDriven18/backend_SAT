@@ -167,7 +167,13 @@ class SectionAttempt(models.Model):
 
 class StudentAnswer(models.Model):
     test_attempt = models.ForeignKey(StudentTestAttempt, on_delete=models.CASCADE, related_name="answers")
-    section_attempt = models.ForeignKey(SectionAttempt, on_delete=models.CASCADE, related_name="answers")
+    section_attempt = models.ForeignKey(
+        SectionAttempt,
+        on_delete=models.CASCADE,
+        related_name="answers",
+        null=True,   # ✅ allow empty
+        blank=True,  # ✅ allow empty in forms
+    )
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
     selected_choice = models.ForeignKey(Choice, on_delete=models.CASCADE, null=True, blank=True)
     text_answer = models.TextField(null=True, blank=True)

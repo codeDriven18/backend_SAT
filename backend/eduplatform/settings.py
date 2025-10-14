@@ -88,11 +88,12 @@ WSGI_APPLICATION = 'eduplatform.wsgi.application'
 #     }
 # }
 
+
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': dj_database_url.config(
+        default='postgresql://postgres:ButterfliesAreMyOnlyWeakness!@localhost:5432/eduplatform',
+        conn_max_age=600,
+    )
 }
 
 # STATIC_URL = '/static/'
@@ -127,7 +128,6 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 # Media (user uploads)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / "media"
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -191,4 +191,7 @@ SPECTACULAR_SETTINGS = {
         {'name': 'Teacher Analytics', 'description': 'Performance analytics and reporting'},
     ],
 }
+import os
 
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

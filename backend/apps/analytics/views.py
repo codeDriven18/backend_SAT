@@ -6,12 +6,11 @@ from django.utils import timezone
 from datetime import timedelta
 from apps.users.models import User
 from apps.tests.models import TestGroup, StudentTestAttempt
-from .serializers import DashboardStatsSerializer
+
 
 class DashboardStatsView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-    serializer_class = DashboardStatsSerializer
     def get(self, request):
         user = request.user
 
