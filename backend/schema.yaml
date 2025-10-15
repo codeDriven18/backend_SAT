@@ -1,0 +1,2581 @@
+openapi: 3.0.3
+info:
+  title: EduPlatform API
+  version: 1.0.0
+  description: Test Management Platform API with separate endpoints for students and
+    teachers
+paths:
+  /api/auth/register/:
+    post:
+      operationId: api_auth_register_create
+      tags:
+      - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRegistrationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserRegistrationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserRegistrationRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRegistration'
+          description: ''
+  /api/auth/login/:
+    post:
+      operationId: api_auth_login_create
+      description: Authenticate user and return access/refresh tokens. Students and
+        teachers use the same endpoint but access different frontend apps.
+      summary: User Login
+      tags:
+      - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  example: john_doe
+                password:
+                  type: string
+                  example: securepassword123
+              required:
+              - username
+              - password
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                description: Login successful
+                content:
+                  application/json:
+                    example:
+                      access_token: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
+                      refresh_token: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
+                      user:
+                        id: 1
+                        username: john_doe
+                        email: john@example.com
+                        user_type: student
+                        first_name: John
+                        last_name: Doe
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                description: Invalid credentials
+                content:
+                  application/json:
+                    example:
+                      error: Invalid credentials
+          description: ''
+  /api/auth/token/refresh/:
+    post:
+      operationId: api_auth_token_refresh_create
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /api/auth/me/:
+    get:
+      operationId: api_auth_me_retrieve
+      tags:
+      - Authentication
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    patch:
+      operationId: api_auth_me_partial_update
+      tags:
+      - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUserRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUserRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUserRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /api/auth/profile/:
+    get:
+      operationId: api_auth_profile_retrieve
+      tags:
+      - Authentication
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    patch:
+      operationId: api_auth_profile_partial_update
+      tags:
+      - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUserRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUserRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUserRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /api/student/dashboard/assigned_tests/:
+    get:
+      operationId: api_student_dashboard_assigned_tests_retrieve
+      description: Retrieve all tests assigned to the authenticated student through
+        their groups.
+      summary: Get Assigned Tests
+      tags:
+      - Student Dashboard
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                description: List of assigned tests with status
+                content:
+                  application/json:
+                    example:
+                    - id: 1
+                      title: SAT Math Practice Test
+                      description: Comprehensive math practice covering algebra and
+                        geometry
+                      difficulty: medium
+                      total_marks: 800
+                      created_by: teacher_johnson
+                      sections:
+                      - id: 1
+                        name: Reading & Writing
+                        time_limit: 64
+                        question_count: 54
+                      - id: 2
+                        name: Math
+                        time_limit: 70
+                        question_count: 44
+                      status: not_started
+                      score: null
+                      percentage: null
+                      completed_at: null
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                description: Only students can access this endpoint
+                content:
+                  application/json:
+                    example:
+                      error: Only students can access this
+          description: ''
+  /api/student/attempts/:
+    get:
+      operationId: api_student_attempts_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - Other
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedStudentTestAttemptList'
+          description: ''
+  /api/student/attempts/{id}/:
+    get:
+      operationId: api_student_attempts_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Other
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudentTestAttempt'
+          description: ''
+  /api/student/test/{test_id}/start/:
+    post:
+      operationId: api_student_test_start_create
+      description: Start a new test attempt. Creates a test attempt record and returns
+        the first section to begin.
+      summary: Start Test Attempt
+      parameters:
+      - in: path
+        name: test_id
+        schema:
+          type: integer
+        description: ID of the test to start
+        required: true
+      tags:
+      - Student Tests
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                description: Test started successfully
+                content:
+                  application/json:
+                    example:
+                      attempt_id: 123
+                      current_section:
+                        id: 1
+                        name: Reading & Writing
+                        time_limit: 64
+                      sections:
+                      - id: 1
+                        name: Reading & Writing
+                        order: 0
+                        time_limit: 64
+                      - id: 2
+                        name: Math
+                        order: 1
+                        time_limit: 70
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                description: Test already completed or other error
+                content:
+                  application/json:
+                    example:
+                      error: Test already completed
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                description: Test not assigned or permission denied
+                content:
+                  application/json:
+                    example:
+                      error: Test not assigned to you
+          description: ''
+  /api/student/test/{test_id}/section/{section_id}/start/:
+    post:
+      operationId: api_student_test_section_start_create
+      parameters:
+      - in: path
+        name: section_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: test_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Student Tests
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/student/test/{test_id}/section/{section_id}/questions/:
+    get:
+      operationId: api_student_test_section_questions_retrieve
+      description: Retrieve all questions for a specific test section. Student answers
+        are included if they exist.
+      summary: Get Section Questions
+      parameters:
+      - in: path
+        name: section_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: test_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Student Tests
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                description: Section questions retrieved successfully
+                content:
+                  application/json:
+                    example:
+                      section:
+                        id: 1
+                        name: Reading & Writing
+                        time_limit: 64
+                        started_at: '2024-01-15T10:30:00Z'
+                      questions:
+                      - id: 1
+                        question_text: Which choice completes the text correctly?
+                        passage_text: The scientist studied the behavior of dolphins...
+                        marks: 1
+                        order: 1
+                        question_type: mcq
+                        image: /media/uploads/questions/sample.jpg
+                        choices:
+                        - id: 1
+                          choice_text: whom are known
+                          choice_label: A
+                        - id: 2
+                          choice_text: which are known
+                          choice_label: B
+                        selected_choice_id: null
+          description: ''
+  /api/student/test/{test_id}/submit-answer/:
+    post:
+      operationId: api_student_test_submit_answer_create
+      parameters:
+      - in: path
+        name: test_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Student Tests
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/student/test/{test_id}/section/{section_id}/answers/:
+    post:
+      operationId: api_student_test_section_answers_create
+      parameters:
+      - in: path
+        name: section_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: test_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Student Tests
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkAnswersInputRequest'
+            examples:
+              BulkSaveAnswers:
+                value:
+                  answers:
+                  - question_id: 1
+                    choice_id: 3
+                  - question_id: 2
+                    choice_id: 7
+                summary: Bulk save answers
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BulkAnswersInputRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BulkAnswersInputRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StudentAnswerOut'
+              examples:
+                Response:
+                  value:
+                  - message: Answers saved
+                    saved:
+                    - question: 1
+                      question_text: What is 2+2
+                      selected_choice: 3
+                      selected_choice_text: '4'
+                      selected_choice_label: C
+                      is_correct: true
+                      answered_at: '2025-09-13T19:05:31.123456Z'
+          description: ''
+  /api/student/test/{test_id}/section/{section_id}/complete/:
+    post:
+      operationId: api_student_test_section_complete_create
+      parameters:
+      - in: path
+        name: section_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: test_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Student Tests
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/student/test/{test_id}/complete/:
+    post:
+      operationId: api_student_test_complete_create
+      parameters:
+      - in: path
+        name: test_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Student Tests
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/student/test/{test_id}/results/:
+    get:
+      operationId: api_student_test_results_retrieve
+      parameters:
+      - in: path
+        name: test_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Student Tests
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/student/test/{test_id}/review/:
+    get:
+      operationId: api_student_test_review_retrieve
+      description: Includes all sections, questions, choices, and student answers.
+      summary: Get detailed test review
+      parameters:
+      - in: path
+        name: test_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Student Tests
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/teacher/tests/:
+    get:
+      operationId: api_teacher_tests_list
+      summary: List teacher’s tests
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - Teacher Tests
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedTestGroupList'
+          description: ''
+    post:
+      operationId: api_teacher_tests_create
+      summary: Create a new test
+      tags:
+      - Teacher Tests
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TestGroupCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TestGroupCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TestGroupCreateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestGroupCreate'
+          description: ''
+  /api/teacher/tests/{id}/:
+    delete:
+      operationId: api_teacher_tests_destroy
+      summary: Delete a test
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this test group.
+        required: true
+      tags:
+      - Teacher Tests
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+    patch:
+      operationId: api_teacher_tests_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this test group.
+        required: true
+      tags:
+      - Teacher Tests
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedTestGroupRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedTestGroupRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedTestGroupRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestGroup'
+          description: ''
+    get:
+      operationId: api_teacher_tests_retrieve
+      summary: Get test by ID
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this test group.
+        required: true
+      tags:
+      - Teacher Tests
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestGroup'
+          description: ''
+    put:
+      operationId: api_teacher_tests_update
+      summary: Update a test
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this test group.
+        required: true
+      tags:
+      - Teacher Tests
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TestGroupRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TestGroupRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TestGroupRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestGroup'
+          description: ''
+  /api/teacher/groups/:
+    get:
+      operationId: api_teacher_groups_list
+      summary: List student groups
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - Student Groups
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedStudentGroupList'
+          description: ''
+    post:
+      operationId: api_teacher_groups_create
+      summary: Create student group
+      tags:
+      - Student Groups
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StudentGroupRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StudentGroupRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StudentGroupRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudentGroup'
+          description: ''
+  /api/teacher/groups/{id}/:
+    delete:
+      operationId: api_teacher_groups_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this student group.
+        required: true
+      tags:
+      - Teacher Groups
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+    patch:
+      operationId: api_teacher_groups_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this student group.
+        required: true
+      tags:
+      - Teacher Groups
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedStudentGroupRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedStudentGroupRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedStudentGroupRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudentGroup'
+          description: ''
+    get:
+      operationId: api_teacher_groups_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this student group.
+        required: true
+      tags:
+      - Teacher Groups
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudentGroup'
+          description: ''
+    put:
+      operationId: api_teacher_groups_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this student group.
+        required: true
+      tags:
+      - Teacher Groups
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StudentGroupRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StudentGroupRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StudentGroupRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudentGroup'
+          description: ''
+  /api/teacher/groups/{id}/add_student/:
+    post:
+      operationId: api_teacher_groups_add_student_create
+      summary: Add student to group
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this student group.
+        required: true
+      tags:
+      - Student Groups
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddRemoveStudentRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AddRemoveStudentRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AddRemoveStudentRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/teacher/groups/{id}/remove_student/:
+    post:
+      operationId: api_teacher_groups_remove_student_create
+      summary: Remove student from group
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this student group.
+        required: true
+      tags:
+      - Student Groups
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddRemoveStudentRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AddRemoveStudentRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AddRemoveStudentRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/teacher/assignments/:
+    get:
+      operationId: api_teacher_assignments_list
+      summary: List assigned tests
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - Test Assignments
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedTestAssignmentList'
+          description: ''
+    post:
+      operationId: api_teacher_assignments_create
+      summary: Assign new test
+      tags:
+      - Test Assignments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TestAssignmentRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TestAssignmentRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TestAssignmentRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestAssignment'
+          description: ''
+  /api/teacher/assignments/{id}/:
+    delete:
+      operationId: api_teacher_assignments_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this test assignment.
+        required: true
+      tags:
+      - Teacher Assignments
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+    patch:
+      operationId: api_teacher_assignments_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this test assignment.
+        required: true
+      tags:
+      - Teacher Assignments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedTestAssignmentRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedTestAssignmentRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedTestAssignmentRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestAssignment'
+          description: ''
+    get:
+      operationId: api_teacher_assignments_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this test assignment.
+        required: true
+      tags:
+      - Teacher Assignments
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestAssignment'
+          description: ''
+    put:
+      operationId: api_teacher_assignments_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this test assignment.
+        required: true
+      tags:
+      - Teacher Assignments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TestAssignmentRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TestAssignmentRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TestAssignmentRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestAssignment'
+          description: ''
+  /api/teacher/library/:
+    get:
+      operationId: api_teacher_library_list
+      summary: List all public tests
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - Test Library
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedTestGroupLibraryList'
+          description: ''
+  /api/teacher/library/{id}/:
+    get:
+      operationId: api_teacher_library_retrieve
+      summary: Get specific test
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this test group.
+        required: true
+      tags:
+      - Test Library
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestGroupLibrary'
+          description: ''
+  /api/teacher/library/{id}/preview/:
+    get:
+      operationId: api_teacher_library_preview_retrieve
+      summary: Preview a test (sections only)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this test group.
+        required: true
+      tags:
+      - Test Library
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/teacher/analytics/test_analytics/:
+    get:
+      operationId: api_teacher_analytics_test_analytics_retrieve
+      summary: Get analytics for specific test
+      parameters:
+      - in: query
+        name: test_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Teacher Analytics
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/teacher/questions/:
+    get:
+      operationId: api_teacher_questions_list
+      summary: List all questions
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - Questions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedQuestionList'
+          description: ''
+    post:
+      operationId: api_teacher_questions_create
+      summary: Create a new question
+      tags:
+      - Questions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuestionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/QuestionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/QuestionRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Question'
+          description: ''
+  /api/teacher/questions/upload-image/:
+    patch:
+      operationId: api_teacher_questions_upload_image_partial_update
+      summary: Upload image for question
+      parameters:
+      - in: query
+        name: question_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Questions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedQuestionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedQuestionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedQuestionRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/teacher/questions/{id}/:
+    delete:
+      operationId: api_teacher_questions_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this question.
+        required: true
+      tags:
+      - Other
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+    patch:
+      operationId: api_teacher_questions_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this question.
+        required: true
+      tags:
+      - Other
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedQuestionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedQuestionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedQuestionRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Question'
+          description: ''
+    get:
+      operationId: api_teacher_questions_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this question.
+        required: true
+      tags:
+      - Other
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Question'
+          description: ''
+    put:
+      operationId: api_teacher_questions_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this question.
+        required: true
+      tags:
+      - Other
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuestionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/QuestionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/QuestionRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Question'
+          description: ''
+  /api/teacher/dashboard/:
+    get:
+      operationId: api_teacher_dashboard_retrieve
+      description: Get overview statistics for teacher dashboard including tests created,
+        groups managed, and recent activity.
+      summary: Teacher Dashboard Statistics
+      tags:
+      - Teacher Dashboard
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/teacher/students/search/:
+    get:
+      operationId: api_teacher_students_search_retrieve
+      summary: Search students by username or name
+      parameters:
+      - in: query
+        name: q
+        schema:
+          type: string
+      tags:
+      - Teacher Tools
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/teacher/assign-test/:
+    post:
+      operationId: api_teacher_assign_test_create
+      summary: Assign test to a student group
+      tags:
+      - Teacher Assignments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                test_id:
+                  type: integer
+                  example: 5
+                group_id:
+                  type: integer
+                  example: 2
+              required:
+              - test_id
+              - group_id
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/analytics/dashboard-stats/:
+    get:
+      operationId: api_analytics_dashboard_stats_retrieve
+      summary: Dashboard statistics
+      tags:
+      - Analytics
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/:
+    get:
+      operationId: api_list
+      tags:
+      - Other
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Notification'
+          description: ''
+  /api/notifications/:
+    get:
+      operationId: api_notifications_list
+      tags:
+      - Other
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Notification'
+          description: ''
+components:
+  schemas:
+    AddRemoveStudentRequest:
+      type: object
+      properties:
+        student_id:
+          type: integer
+      required:
+      - student_id
+    AnswerInputRequest:
+      type: object
+      properties:
+        question_id:
+          type: integer
+        choice_id:
+          type: integer
+          nullable: true
+        text_answer:
+          type: string
+          nullable: true
+      required:
+      - question_id
+    BulkAnswersInputRequest:
+      type: object
+      properties:
+        answers:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnswerInputRequest'
+      required:
+      - answers
+    Choice:
+      type: object
+      properties:
+        choice_text:
+          type: string
+        choice_label:
+          type: string
+        is_correct:
+          type: boolean
+      required:
+      - choice_label
+      - choice_text
+    ChoiceRequest:
+      type: object
+      properties:
+        choice_text:
+          type: string
+          minLength: 1
+        choice_label:
+          type: string
+          minLength: 1
+        is_correct:
+          type: boolean
+      required:
+      - choice_label
+      - choice_text
+    DifficultyEnum:
+      enum:
+      - easy
+      - medium
+      - hard
+      type: string
+      description: |-
+        * `easy` - Easy
+        * `medium` - Medium
+        * `hard` - Hard
+    Notification:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 255
+        message:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        is_read:
+          type: boolean
+        user:
+          type: integer
+      required:
+      - created_at
+      - id
+      - message
+      - title
+      - user
+    PaginatedQuestionList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Question'
+    PaginatedStudentGroupList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/StudentGroup'
+    PaginatedStudentTestAttemptList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/StudentTestAttempt'
+    PaginatedTestAssignmentList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/TestAssignment'
+    PaginatedTestGroupLibraryList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/TestGroupLibrary'
+    PaginatedTestGroupList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/TestGroup'
+    PatchedQuestionRequest:
+      type: object
+      properties:
+        question_text:
+          type: string
+          nullable: true
+        image:
+          type: string
+          format: binary
+          nullable: true
+        test_group:
+          type: integer
+          nullable: true
+        passage_text:
+          type: string
+          nullable: true
+        marks:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        section:
+          type: integer
+          nullable: true
+        question_type:
+          $ref: '#/components/schemas/QuestionTypeEnum'
+        correct_answers: {}
+    PatchedStudentGroupRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+    PatchedTestAssignmentRequest:
+      type: object
+      properties:
+        test_group:
+          type: integer
+        student_group:
+          type: integer
+        is_active:
+          type: boolean
+    PatchedTestGroupRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+          nullable: true
+        is_active:
+          type: boolean
+        is_preview:
+          type: boolean
+    PatchedUserRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 1
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          title: Email address
+          maxLength: 254
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        user_type:
+          $ref: '#/components/schemas/UserTypeEnum'
+        phone_number:
+          type: string
+          maxLength: 15
+    Question:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        question_text:
+          type: string
+          nullable: true
+        image:
+          type: string
+          format: uri
+          nullable: true
+        test_group:
+          type: integer
+          nullable: true
+        passage_text:
+          type: string
+          nullable: true
+        marks:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        section:
+          type: integer
+          nullable: true
+        question_type:
+          $ref: '#/components/schemas/QuestionTypeEnum'
+        correct_answers: {}
+      required:
+      - id
+    QuestionCreate:
+      type: object
+      properties:
+        question_text:
+          type: string
+          nullable: true
+        passage_text:
+          type: string
+          nullable: true
+        image:
+          type: string
+          format: uri
+          nullable: true
+        marks:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        question_type:
+          $ref: '#/components/schemas/QuestionTypeEnum'
+        choices:
+          type: array
+          items:
+            $ref: '#/components/schemas/Choice'
+        correct_answers: {}
+        section:
+          type: integer
+          nullable: true
+    QuestionCreateRequest:
+      type: object
+      properties:
+        question_text:
+          type: string
+          nullable: true
+        passage_text:
+          type: string
+          nullable: true
+        image:
+          type: string
+          format: binary
+          nullable: true
+        marks:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        question_type:
+          $ref: '#/components/schemas/QuestionTypeEnum'
+        choices:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChoiceRequest'
+        correct_answers: {}
+        section:
+          type: integer
+          nullable: true
+    QuestionRequest:
+      type: object
+      properties:
+        question_text:
+          type: string
+          nullable: true
+        image:
+          type: string
+          format: binary
+          nullable: true
+        test_group:
+          type: integer
+          nullable: true
+        passage_text:
+          type: string
+          nullable: true
+        marks:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        section:
+          type: integer
+          nullable: true
+        question_type:
+          $ref: '#/components/schemas/QuestionTypeEnum'
+        correct_answers: {}
+    QuestionTypeEnum:
+      enum:
+      - mcq
+      - math_free
+      type: string
+      description: |-
+        * `mcq` - Multiple Choice
+        * `math_free` - Math Free Answer
+    SectionAttempt:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        section:
+          type: integer
+        section_name:
+          type: string
+          readOnly: true
+        started_at:
+          type: string
+          format: date-time
+          nullable: true
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+        time_taken:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          description: Time taken in seconds
+        score:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        total_marks:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+      required:
+      - id
+      - section
+      - section_name
+    StatusEnum:
+      enum:
+      - not_started
+      - in_progress
+      - completed
+      - timeout
+      type: string
+      description: |-
+        * `not_started` - Not Started
+        * `in_progress` - In Progress
+        * `completed` - Completed
+        * `timeout` - Timeout
+    StudentAnswerOut:
+      type: object
+      properties:
+        question:
+          type: integer
+        question_type:
+          type: string
+        question_text:
+          type: string
+          readOnly: true
+        selected_choice:
+          type: integer
+          nullable: true
+        selected_choice_text:
+          type: string
+          readOnly: true
+        selected_choice_label:
+          type: string
+          readOnly: true
+        text_answer:
+          type: string
+          nullable: true
+        student_text_answer:
+          type: string
+          nullable: true
+        correct_answers:
+          type: string
+          readOnly: true
+        is_correct:
+          type: boolean
+        answered_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - answered_at
+      - correct_answers
+      - question
+      - question_text
+      - question_type
+      - selected_choice_label
+      - selected_choice_text
+      - student_text_answer
+    StudentBasic:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        full_name:
+          type: string
+          readOnly: true
+      required:
+      - full_name
+      - id
+      - username
+    StudentBasicRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 1
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+      required:
+      - username
+    StudentGroup:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+        teacher_name:
+          type: string
+          readOnly: true
+        students:
+          type: array
+          items:
+            $ref: '#/components/schemas/StudentBasic'
+          readOnly: true
+        student_count:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - name
+      - student_count
+      - students
+      - teacher_name
+    StudentGroupRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+      required:
+      - name
+    StudentTestAttempt:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        test_group:
+          type: integer
+        test_title:
+          type: string
+          readOnly: true
+        student:
+          type: integer
+        student_name:
+          type: string
+          readOnly: true
+        started_at:
+          type: string
+          format: date-time
+          readOnly: true
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        current_section:
+          type: integer
+          nullable: true
+        current_section_name:
+          type: string
+          readOnly: true
+        total_score:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        total_marks:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        percentage:
+          type: number
+          format: double
+        section_attempts:
+          type: array
+          items:
+            $ref: '#/components/schemas/SectionAttempt'
+          readOnly: true
+      required:
+      - current_section_name
+      - id
+      - section_attempts
+      - started_at
+      - student
+      - student_name
+      - test_group
+      - test_title
+    TestAssignment:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        test_group:
+          type: integer
+        student_group:
+          type: integer
+        test_title:
+          type: string
+          readOnly: true
+        group_name:
+          type: string
+          readOnly: true
+        assigned_by_name:
+          type: string
+          readOnly: true
+        student_count:
+          type: integer
+          readOnly: true
+        assigned_at:
+          type: string
+          format: date-time
+          readOnly: true
+        is_active:
+          type: boolean
+      required:
+      - assigned_at
+      - assigned_by_name
+      - group_name
+      - id
+      - student_count
+      - student_group
+      - test_group
+      - test_title
+    TestAssignmentRequest:
+      type: object
+      properties:
+        test_group:
+          type: integer
+        student_group:
+          type: integer
+        is_active:
+          type: boolean
+      required:
+      - student_group
+      - test_group
+    TestGroup:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+          nullable: true
+        is_active:
+          type: boolean
+        is_preview:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        questions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Question'
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - questions
+      - title
+    TestGroupCreate:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+          nullable: true
+        difficulty:
+          $ref: '#/components/schemas/DifficultyEnum'
+        passing_marks:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        is_active:
+          type: boolean
+        is_public:
+          type: boolean
+        sections:
+          type: array
+          items:
+            $ref: '#/components/schemas/TestSectionCreate'
+      required:
+      - id
+      - sections
+      - title
+    TestGroupCreateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+          nullable: true
+        difficulty:
+          $ref: '#/components/schemas/DifficultyEnum'
+        passing_marks:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        is_active:
+          type: boolean
+        is_public:
+          type: boolean
+        sections:
+          type: array
+          items:
+            $ref: '#/components/schemas/TestSectionCreateRequest'
+      required:
+      - sections
+      - title
+    TestGroupLibrary:
+      type: object
+      description: For test library view - basic info only
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+          nullable: true
+        created_by_name:
+          type: string
+          readOnly: true
+        difficulty:
+          $ref: '#/components/schemas/DifficultyEnum'
+        total_marks:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        passing_marks:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        section_count:
+          type: integer
+          readOnly: true
+        question_count:
+          type: integer
+          readOnly: true
+      required:
+      - created_at
+      - created_by_name
+      - id
+      - question_count
+      - section_count
+      - title
+    TestGroupRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+          nullable: true
+        is_active:
+          type: boolean
+        is_preview:
+          type: boolean
+      required:
+      - title
+    TestSectionCreate:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+          nullable: true
+        time_limit:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+          description: Time limit in minutes
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        questions:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuestionCreate'
+      required:
+      - name
+      - questions
+    TestSectionCreateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+          nullable: true
+        time_limit:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+          description: Time limit in minutes
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        questions:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuestionCreateRequest'
+      required:
+      - name
+      - questions
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+      required:
+      - access
+      - refresh
+    TokenRefreshRequest:
+      type: object
+      properties:
+        refresh:
+          type: string
+          minLength: 1
+      required:
+      - refresh
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          title: Email address
+          maxLength: 254
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        user_type:
+          $ref: '#/components/schemas/UserTypeEnum'
+        phone_number:
+          type: string
+          maxLength: 15
+        profile_picture:
+          type: string
+          format: uri
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - profile_picture
+      - username
+    UserRegistration:
+      type: object
+      properties:
+        username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          title: Email address
+          maxLength: 254
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        user_type:
+          $ref: '#/components/schemas/UserTypeEnum'
+        phone_number:
+          type: string
+          maxLength: 15
+      required:
+      - username
+    UserRegistrationRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 1
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          title: Email address
+          maxLength: 254
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        user_type:
+          $ref: '#/components/schemas/UserTypeEnum'
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+        password_confirm:
+          type: string
+          writeOnly: true
+          minLength: 1
+        phone_number:
+          type: string
+          maxLength: 15
+      required:
+      - password
+      - password_confirm
+      - username
+    UserTypeEnum:
+      enum:
+      - student
+      - teacher
+      - admin
+      type: string
+      description: |-
+        * `student` - Student
+        * `teacher` - Teacher
+        * `admin` - Admin
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+tags:
+- name: Authentication
+  description: User authentication and account management
+- name: Student Dashboard
+  description: Student dashboard and test overview
+- name: Student Tests
+  description: Test taking functionality for students
+- name: Student Results
+  description: Test results and review for students
+- name: Teacher Dashboard
+  description: Teacher dashboard and statistics
+- name: Teacher Tests
+  description: Test creation and management
+- name: Teacher Groups
+  description: Student group management
+- name: Teacher Assignments
+  description: Test assignment to groups
+- name: Teacher Analytics
+  description: Performance analytics and reporting
