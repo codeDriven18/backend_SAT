@@ -75,12 +75,17 @@ WSGI_APPLICATION = 'eduplatform.wsgi.application'
 
 
 DATABASES = {
-    'default': dj_database_url.config(
-        default=config('DATABASE_URL'),
-        conn_max_age=600,
-        ssl_require=True
-    )
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': config('DB_NAME', default='eduplatform'),
+        'USER': config('DB_USER', default='bushstep'),
+        'PASSWORD': config('DB_PASSWORD', default='ButterfliesAreMyOnlyWeakness!'),
+        'HOST': config('DB_HOST', default='localhost'),
+        'PORT': config('DB_PORT', default='5432'),
+        'CONN_MAX_AGE': 600,
+    }
 }
+
 
 AUTH_PASSWORD_VALIDATORS = [
     {
