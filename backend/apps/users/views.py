@@ -142,12 +142,13 @@ class LoginView(APIView):
             'access': str(refresh.access_token),
         })
 
-class ProfileView(APIView):
+class ProfileView(generics.GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
-    
+    serializer_class = UserSerializer
+
     def get(self, request):
         user = request.user
-        user_data = UserSerializer(user).data
+        user_data = self.get_serializer(user).data
         
         if user.user_type == 'student':
             try:
@@ -174,7 +175,7 @@ class ProfileView(APIView):
         serializer.is_valid(raise_exception=True)
         request.user.profile_picture = serializer.validated_data['profile_picture']
         request.user.save(update_fields=['profile_picture'])
-        return Response({'message': 'Profile picture updated', 'user': UserSerializer(request.user).data})
+        return Response({'message': 'Profile picture updated', 'user': self.get_serializer(request.user).data})
 
 class UserListView(generics.ListAPIView):
     queryset = User.objects.all()

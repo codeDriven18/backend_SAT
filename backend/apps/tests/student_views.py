@@ -763,6 +763,7 @@ class SubmitBulkAnswersView(APIView):
                     defaults={
                         'selected_choice': selected_choice,
                         'is_correct': is_correct,
+                        'section_attempt': section_attempt,
                     },
                 )
 
@@ -781,6 +782,7 @@ class SubmitBulkAnswersView(APIView):
                     defaults={
                         'text_answer': text_answer,
                         'is_correct': is_correct,
+                        'section_attempt': section_attempt,
                     },
                 )
 

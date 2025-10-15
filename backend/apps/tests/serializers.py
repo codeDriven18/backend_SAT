@@ -59,6 +59,7 @@ class QuestionForStudentSerializer(serializers.ModelSerializer):
 
 class QuestionCreateSerializer(serializers.ModelSerializer):
     choices = ChoiceSerializer(many=True, required=False)
+    image = serializers.ImageField(required=False, allow_null=True)
     
     class Meta:
         model = Question

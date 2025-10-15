@@ -11,6 +11,7 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 
 
 ALLOWED_HOSTS = [
+    'localhost',
     'https://teacher.4prepsat.com',
     'https://student.4prepsat.com',
     '127.0.0.1',
@@ -109,7 +110,8 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # Media (user uploads)
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / "media"
+MEDIA_ROOT = BASE_DIR / 'media'
+
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -174,7 +176,5 @@ SPECTACULAR_SETTINGS = {
         {'name': 'Teacher Analytics', 'description': 'Performance analytics and reporting'},
     ],
 }
-import os
 
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
