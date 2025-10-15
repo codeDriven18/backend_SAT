@@ -1,28 +1,18 @@
 import os
 from pathlib import Path
 from datetime import timedelta
-from decouple import AutoConfig, Config, RepositoryEnv
-from django.core.exceptions import ImproperlyConfigured
+from decouple import config
 
 import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-# Configure decouple to read the exact .env at project base dir
-_env_file = BASE_DIR / '.env'
-if _env_file.exists():
-    config = Config(RepositoryEnv(str(_env_file)))
-else:
-    config = AutoConfig(search_path=str(BASE_DIR))
+SECRET_KEY = config('SECRET_KEY', default='django-insecure-8s2k&y^p#x1r*9u_3l%4kz!q0o^a7b3d')
 DEBUG = config('DEBUG', default=False, cast=bool)
-SECRET_KEY = config('SECRET_KEY', default=None)
-if not SECRET_KEY:
-    if DEBUG:
-        SECRET_KEY = 'dev-insecure-secret-key-change-me'
-    else:
-        raise ImproperlyConfigured('SECRET_KEY not found. Set SECRET_KEY env or add it to .env')
+
 
 ALLOWED_HOSTS = [
-    'localhost',
+    'https://teacher.4prepsat.com',
+    'https://student.4prepsat.com',
     '127.0.0.1',
     '0.0.0.0',
     'backend-sato.onrender.com',
@@ -80,36 +70,16 @@ TEMPLATES = [
 WSGI_APPLICATION = 'eduplatform.wsgi.application'
 
 
-# if os.getenv('RENDER'):
-#     DATABASES = {
-#         'default': dj_database_url.config(conn_max_age=600, ssl_require=True)
-#     }
-# else:
-#     DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': 'postgresql_e4kf',
-#         'USER': 'feruzbek',
-#         'PASSWORD': 'qLrAuVedJVtNozZjrTBOgjdMwnnR0cjc',
-#         'HOST': 'dpg-d30ljq8gjchc73f0h530-a.oregon-postgres.render.com',
-#         'PORT': '5432',
-#         'OPTIONS': {
-#             'sslmode': 'require',
-#         },
-#     }
-# }
+# Database settings
 
 
 DATABASES = {
     'default': dj_database_url.config(
-        default=os.getenv('DATABASE_URL'),  # must exist
+        default=os.getenv('DATABASE_URL'),
         conn_max_age=600,
         ssl_require=True
     )
 }
-
-# STATIC_URL = '/static/'
-# STATICFILES_DIRS = [BASE_DIR / "static"]
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -166,8 +136,6 @@ SIMPLE_JWT = {
     'ROTATE_REFRESH_TOKENS': True,
 }
 
-# CORS settings
-# CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='http://localhost:3000,http://localhost:3001,http://127.0.0.1:3000,http://127.0.0.1:3001').split(',')
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',
     'http://localhost:3001',
