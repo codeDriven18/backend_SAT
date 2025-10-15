@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from drf_spectacular.utils import extend_schema_serializer, OpenApiExample
+from drf_spectacular.utils import extend_schema_serializer, OpenApiExample, extend_schema_field
 from .models import *
 from apps.users.models import User
 
@@ -112,6 +112,7 @@ class TestSectionSerializer(serializers.ModelSerializer):
         model = TestSection
         fields = ['id', 'name', 'description', 'time_limit', 'order', 'questions', 'question_count']
     
+    @extend_schema_field(serializers.IntegerField())
     def get_question_count(self, obj):
         return obj.questions.count()
 
@@ -315,9 +316,11 @@ class TestGroupLibrarySerializer(serializers.ModelSerializer):
             'total_marks', 'passing_marks', 'created_at', 'section_count', 'question_count'
         ]
     
+    @extend_schema_field(serializers.IntegerField())
     def get_section_count(self, obj):
         return obj.sections.count()
     
+    @extend_schema_field(serializers.IntegerField())
     def get_question_count(self, obj):
         return sum(section.questions.count() for section in obj.sections.all())
 

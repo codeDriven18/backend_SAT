@@ -1,15 +1,18 @@
-from rest_framework import permissions
+from rest_framework import permissions, serializers
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.db.models import Avg, Max
 from django.utils import timezone
 from datetime import timedelta
 from apps.users.models import User
+from drf_spectacular.utils import extend_schema, OpenApiTypes
 from apps.tests.models import TestGroup, StudentTestAttempt
 
 
+@extend_schema(tags=['Analytics'], summary='Dashboard statistics', responses={200: OpenApiTypes.OBJECT})
 class DashboardStatsView(APIView):
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = serializers.Serializer
 
     def get(self, request):
         user = request.user

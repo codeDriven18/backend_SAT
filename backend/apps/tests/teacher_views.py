@@ -13,6 +13,7 @@ from drf_spectacular.utils import (
 )
 from .models import *
 from .serializers import *
+from apps.users.models import User
 
 
 # ───────────────────────────────────────────────
@@ -22,9 +23,12 @@ from .serializers import *
     tags=['Teacher Dashboard'],
     summary='Teacher Dashboard Statistics',
     description='Get overview statistics for teacher dashboard including tests created, groups managed, and recent activity.',
+    responses={200: OpenApiTypes.OBJECT}
 )
 class TeacherDashboardView(APIView):
     permission_classes = [IsAuthenticated]
+    # provide a serializer for schema generation
+    serializer_class = None  # set below after DummySerializer definition
 
     def get(self, request):
         if request.user.user_type != 'teacher':
@@ -66,11 +70,18 @@ class TeacherDashboardView(APIView):
 )
 class TeacherTestViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
+    queryset = TestGroup.objects.none()
 
     def get_queryset(self):
-        if self.request.user.user_type == 'teacher':
-            return TestGroup.objects.filter(created_by=self.request.user).order_by('-created_at')
-        return TestGroup.objects.none()
+        # Avoid evaluation during schema generation or for anonymous users
+        if getattr(self, 'swagger_fake_view', False):
+            return self.queryset
+        user = getattr(self.request, 'user', None)
+        if not user or getattr(user, 'is_anonymous', True):
+            return self.queryset
+        if getattr(user, 'user_type', None) == 'teacher':
+            return TestGroup.objects.filter(created_by=user).order_by('-created_at')
+        return self.queryset
 
     def get_serializer_class(self):
         if self.action == 'create':
@@ -150,10 +161,17 @@ class TestLibraryViewSet(viewsets.ReadOnlyModelViewSet):
 class StudentGroupViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     serializer_class = StudentGroupSerializer
+    queryset = StudentGroup.objects.none()
 
     def get_queryset(self):
-        if self.request.user.user_type == 'teacher':
-            return StudentGroup.objects.filter(teacher=self.request.user).order_by('-created_at')
+        # Avoid evaluation during schema generation or for anonymous users
+        if getattr(self, 'swagger_fake_view', False):
+            return StudentGroup.objects.none()
+        user = getattr(self.request, 'user', None)
+        if not user or getattr(user, 'is_anonymous', True):
+            return StudentGroup.objects.none()
+        if getattr(user, 'user_type', None) == 'teacher':
+            return StudentGroup.objects.filter(teacher=user).order_by('-created_at')
         return StudentGroup.objects.none()
 
     def perform_create(self, serializer):
@@ -214,11 +232,18 @@ class StudentGroupViewSet(viewsets.ModelViewSet):
 class TestAssignmentViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     serializer_class = TestAssignmentSerializer
+    queryset = TestAssignment.objects.none()
 
     def get_queryset(self):
-        if self.request.user.user_type == 'teacher':
-            return TestAssignment.objects.filter(assigned_by=self.request.user).order_by('-assigned_at')
-        return TestAssignment.objects.none()
+        # Avoid evaluation during schema generation or for anonymous users
+        if getattr(self, 'swagger_fake_view', False):
+            return self.queryset
+        user = getattr(self.request, 'user', None)
+        if not user or getattr(user, 'is_anonymous', True):
+            return self.queryset
+        if getattr(user, 'user_type', None) == 'teacher':
+            return TestAssignment.objects.filter(assigned_by=user).order_by('-assigned_at')
+        return self.queryset
 
 
 # ───────────────────────────────────────────────
@@ -231,9 +256,16 @@ class TestAssignmentViewSet(viewsets.ModelViewSet):
 class QuestionViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     serializer_class = QuestionSerializer
+    queryset = Question.objects.none()
 
     def get_queryset(self):
-        if self.request.user.user_type == 'teacher':
+        # Avoid evaluation during schema generation or anonymous users
+        if getattr(self, 'swagger_fake_view', False):
+            return self.queryset
+        user = getattr(self.request, 'user', None)
+        if not user or getattr(user, 'is_anonymous', True):
+            return self.queryset
+        if user.user_type == 'teacher':
             return Question.objects.filter(test_group__created_by=self.request.user).order_by('-order')
         return Question.objects.none()
 
@@ -351,6 +383,9 @@ class SearchStudentsView(APIView):
                 'full_name': f"{s.first_name} {s.last_name}".strip() or s.username
             } for s in students
         ])
+
+# Bind DummySerializer for TeacherDashboardView after its definition
+TeacherDashboardView.serializer_class = DummySerializer
 
 
 # ───────────────────────────────────────────────

@@ -89,9 +89,11 @@ WSGI_APPLICATION = 'eduplatform.wsgi.application'
 # }
 
 
+import dj_database_url
+
 DATABASES = {
-    'default': dj_database_url.config(
-        default=os.getenv('DATABASE_URL'),  # must exist
+    'default': dj_database_url.parse(
+        "postgresql://bushstep:NKbxLpHLAhTIsxe9FAxcUGr2jqjV7zwv@dpg-d3ipdm6mcj7s739ehngg-a.oregon-postgres.render.com/postgresql_37ip",
         conn_max_age=600,
         ssl_require=True
     )
