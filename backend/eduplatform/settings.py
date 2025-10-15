@@ -7,15 +7,14 @@ import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = config('SECRET_KEY', default='django-insecure-8s2k&y^p#x1r*9u_3l%4kz!q0o^a7b3d')
-
-DEBUG = config('DEBUG', default=True, cast=bool)
+DEBUG = config('DEBUG', default=False, cast=bool)
 
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
     '0.0.0.0',
-    'backend-sato.onrender.com'
+    'backend-sato.onrender.com',
+    '138.199.192.2',
 ]
 
 
@@ -89,11 +88,9 @@ WSGI_APPLICATION = 'eduplatform.wsgi.application'
 # }
 
 
-import dj_database_url
-
 DATABASES = {
-    'default': dj_database_url.parse(
-        "postgresql://bushstep:NKbxLpHLAhTIsxe9FAxcUGr2jqjV7zwv@dpg-d3ipdm6mcj7s739ehngg-a.oregon-postgres.render.com/postgresql_37ip",
+    'default': dj_database_url.config(
+        default=os.getenv('DATABASE_URL'),  # must exist
         conn_max_age=600,
         ssl_require=True
     )
