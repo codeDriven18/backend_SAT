@@ -1,13 +1,25 @@
 import os
 from pathlib import Path
 from datetime import timedelta
-from decouple import config
+from decouple import AutoConfig, Config, RepositoryEnv
+from django.core.exceptions import ImproperlyConfigured
 
 import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-
+# Configure decouple to read the exact .env at project base dir
+_env_file = BASE_DIR / '.env'
+if _env_file.exists():
+    config = Config(RepositoryEnv(str(_env_file)))
+else:
+    config = AutoConfig(search_path=str(BASE_DIR))
 DEBUG = config('DEBUG', default=False, cast=bool)
+SECRET_KEY = config('SECRET_KEY', default=None)
+if not SECRET_KEY:
+    if DEBUG:
+        SECRET_KEY = 'dev-insecure-secret-key-change-me'
+    else:
+        raise ImproperlyConfigured('SECRET_KEY not found. Set SECRET_KEY env or add it to .env')
 
 ALLOWED_HOSTS = [
     'localhost',
