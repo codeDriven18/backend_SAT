@@ -91,8 +91,9 @@ WSGI_APPLICATION = 'eduplatform.wsgi.application'
 
 DATABASES = {
     'default': dj_database_url.config(
-        default='postgresql://postgres:ButterfliesAreMyOnlyWeakness!@localhost:5432/eduplatform',
+        default=os.getenv('DATABASE_URL'),  # must exist
         conn_max_age=600,
+        ssl_require=True
     )
 }
 
@@ -119,7 +120,7 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+
 
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / "static"]

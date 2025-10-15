@@ -7,4 +7,6 @@ urlpatterns = [
     path('login/', LoginView.as_view(), name='login'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('me/', ProfileView.as_view(), name='me'),
+    # alias expected by frontend
+    path('profile/', ProfileView.as_view(), name='profile'),
 ]
