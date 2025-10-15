@@ -12,8 +12,8 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 
 ALLOWED_HOSTS = [
     'localhost',
-    'https://teacher.4prepsat.com',
-    'https://student.4prepsat.com',
+    'teacher.4prepsat.com',
+    'student.4prepsat.com',
     '127.0.0.1',
     '0.0.0.0',
     'backend-sato.onrender.com',
@@ -139,15 +139,16 @@ SIMPLE_JWT = {
 }
 
 CORS_ALLOWED_ORIGINS = [
+    "https://api.4prepsat.com",
     "https://student.4prepsat.com",
     "https://teacher.4prepsat.com",
     "https://backend-sato.onrender.com",
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'http://127.0.0.1:3000',
-    'http://127.0.0.1:3001',
-    'https://backend-sato.onrender.com'
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:3001",
 ]
+
 
 
 CORS_ALLOW_CREDENTIALS = True

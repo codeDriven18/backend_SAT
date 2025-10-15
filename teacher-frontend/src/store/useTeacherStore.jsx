@@ -116,15 +116,27 @@ const useTeacherStore = create((set, get) => ({
     }
   },
 
-  uploadQuestionImage: async (questionId, file) => {
-    if (!file) return { success: true };
+  updateTest: async (id, testData) => {
     try {
-      const response = await teacherAPI.uploadQuestionImage(questionId, file, (progressEvent) => {
-        const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-        // optional: set transient UI state elsewhere if needed
-        // console.log('upload progress', questionId, percentCompleted);
-      });
+      const response = await teacherAPI.updateTest(id, testData);
+      set(state => ({
+        tests: state.tests.map(test => 
+          test.id === id ? response.data : test
+        )
+      }));
       return { success: true, data: response.data };
+    } catch (error) {
+      return { success: false, error: error.response?.data || error.message };
+    }
+  },
+
+  deleteTest: async (id) => {
+    try {
+      await teacherAPI.deleteTest(id);
+      set(state => ({
+        tests: state.tests.filter(test => test.id !== id)
+      }));
+      return { success: true };
     } catch (error) {
       return { success: false, error: error.response?.data || error.message };
     }

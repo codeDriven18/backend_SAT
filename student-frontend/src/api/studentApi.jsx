@@ -28,10 +28,12 @@ export const studentApi = {
   },
 
   // Bulk save answers
-  submitBulkAnswers: async (testId, sectionId, answers) => {
-    // answers = [{ question_id, choice_id }, ...]
-    const { data } = await api.post(`/api/student/test/${testId}/section/${sectionId}/answers/`, { answers });
-    return data;
+  submitBulkAnswers: async (testId, sectionId, data) => {
+    const { data: res } = await api.post(
+      `/api/student/test/${testId}/section/${sectionId}/answers/`,
+      data   // ✅ don't wrap again
+    );
+    return res;
   },
 
   // (Optional) keep single submit only if you still use it somewhere

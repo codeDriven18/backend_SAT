@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Bell, Check, Trash2 } from "lucide-react";
+import { Bell, Check } from "lucide-react";
 import { getNotifications, markAsRead, markAllAsRead } from "../services/notifications";
 
 export default function NotificationBell() {
@@ -104,7 +104,7 @@ export default function NotificationBell() {
               {unreadCount > 0 && (
                 <button 
                   onClick={handleMarkAllAsRead}
-                  className="text-xs text-emerald-600 hover:text-emerald-700 flex items-center space-x-1"
+                  className="text-xs text-blue-600 hover:text-blue-700 flex items-center space-x-1"
                   title="Mark all as read"
                 >
                   <Check className="w-3 h-3" />
@@ -113,7 +113,7 @@ export default function NotificationBell() {
               )}
               <button 
                 onClick={fetchNotifications}
-                className="text-xs text-emerald-600 hover:text-emerald-700"
+                className="text-xs text-blue-600 hover:text-blue-700"
                 disabled={loading}
               >
                 {loading ? 'Loading...' : 'Refresh'}
@@ -124,7 +124,7 @@ export default function NotificationBell() {
           <div className="max-h-[420px] overflow-y-auto">
             {loading && notifications.length === 0 ? (
               <div className="p-6 text-center">
-                <div className="w-8 h-8 border-3 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
                 <p className="text-sm text-gray-500">Loading notifications...</p>
               </div>
             ) : notifications.length === 0 ? (

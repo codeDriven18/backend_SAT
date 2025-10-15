@@ -4,6 +4,7 @@ import RegisterPage from './pages/RegisterPage';
 import StudentDashboard from './components/StudentDashboard';
 import TestPage from './components/TestPage';
 import TestResults from './components/TestResults';
+import ProfileSettings from './components/ProfileSettings';
 import ProtectedRoute from './components/ProtectedRoute';
 import useAuth from './hooks/useAuth';
 
@@ -46,6 +47,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <TestResults />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <ProfileSettings />
               </ProtectedRoute>
             }
           />

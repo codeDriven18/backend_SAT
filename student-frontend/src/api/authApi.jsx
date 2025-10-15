@@ -26,17 +26,25 @@ export const authApi = {
 
   // Get current user profile (if needed)
   getProfile: async () => {
-    const response = await api.get('/api/auth/me/');
+    const response = await api.get('/api/auth/profile/');
     return response.data;
   },
 
-  // Upload profile picture (optional)
-  uploadProfilePicture: async (file) => {
-    const form = new FormData();
-    form.append('profile_picture', file);
-    const response = await api.patch('/api/auth/me/', form, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+  // Update user profile
+  updateProfile: async (profileData) => {
+    const response = await api.patch('/api/auth/profile/', profileData);
     return response.data;
   },
+
+  // Update profile picture
+  updateProfilePicture: async (file) => {
+    const formData = new FormData();
+    formData.append('profile_picture', file);
+    const response = await api.patch('/api/auth/profile/', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  }
 };

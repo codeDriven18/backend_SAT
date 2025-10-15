@@ -209,7 +209,7 @@ const TestPage = () => {
     setLocalAnswers((prev) => ({ ...prev, [q.id]: choiceId }));
     saveLocalAnswer(q.id, choiceId);
   };
-  console.log(q);
+
   const handleFreeResponseChange = (e, questionId) => {
     const val = e.target.value;
     if(!q) return;
@@ -223,13 +223,11 @@ const TestPage = () => {
     // global update (for backend submission)
     saveLocalAnswer(questionId, null, val);
   };
-  
 
   const handleFreeResponseSubmit = () => {
     if (!q || !freeResponseAnswers[q.id]?.trim()) return;
     
     // Save free response answer to backend
-    // For math_free, we send the text value instead of choice_id
     saveLocalAnswer(q.id, null, freeResponseAnswers[q.id]);
     
     // Visual feedback
@@ -287,8 +285,6 @@ const TestPage = () => {
       setShowNoteModal(false);
     }
   };
-
-  // console.log(q);
 
   const goNext = () => {
     if (!currentQuestions?.length) return;
@@ -393,34 +389,24 @@ const TestPage = () => {
                     setIdx(i);
                     setShowPreview(false);
                   }}
-                  className={`h-12 rounded-lg border-2 text-sm font-bold relative transition-all hover:scale-105 ${
+                  className={`h-10 rounded-lg border-2 text-sm font-semibold transition-all shadow-sm ${
                     isActive
-                      ? 'bg-blue-600 text-white border-blue-600 shadow-lg'
-                      : answered && !isMarked
-                      ? 'bg-gray-900 text-white border-gray-900 shadow-md'
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : answered
+                      ? 'bg-gray-900 text-white border-gray-900'
                       : isMarked
-                      ? 'bg-white text-gray-900 border-red-500 shadow-md'
-                      : 'bg-white text-gray-500 border-gray-300 hover:border-blue-400'
-                  }`}
+                      ? 'bg-white text-gray-700 border-red-500'
+                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                  } relative`}
                 >
                   {i + 1}
-                  {isMarked && !isActive && (
-                    <Flag className="absolute -top-1.5 -right-1.5 w-4 h-4 text-red-600 fill-current drop-shadow-md" />
+                  {isMarked && (
+                    <Flag className="absolute -top-1 -right-1 w-4 h-4 text-red-600 fill-current" />
                   )}
                 </button>
               );
             })}
           </div>
-        </div>
-
-        {/* Footer */}
-        <div className="p-6 bg-gradient-to-r from-gray-50 to-white border-t border-gray-200 flex justify-end">
-          <button
-            onClick={() => setShowPreview(false)}
-            className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white rounded-xl font-semibold transition-all shadow-lg"
-          >
-            Close
-          </button>
         </div>
       </div>
     </div>
@@ -429,183 +415,123 @@ const TestPage = () => {
   // LOADING
   if (!currentTest || !currentSection) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-gray-300 border-t-blue-600 rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-gray-600 text-lg">Loading test...</p>
+          <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-gray-600">Loading…</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex flex-col">
-      {/* Top Header Bar - Modern Bluebook style */}
-      <div className="bg-white border-b-2 border-blue-100 shadow-md flex-shrink-0">
-        <div className="px-4 lg:px-6 py-3">
-          <div className="flex items-center justify-between">
-            {/* Left: Module name */}
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2">
-                <BookOpen className="w-5 h-5 text-blue-600" />
-                <h1 className="text-base lg:text-lg font-bold text-gray-900">
-                  {currentSection.name || 'Reading & Writing'}
-                </h1>
-              </div>
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      {/* Top bar */}
+      <div className="bg-white border-b">
+        <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+              <BookOpen className="w-5 h-5 text-white" />
             </div>
-
-            {/* Center-Right: Timer and controls */}
-            <div className="flex items-center gap-3">
-              <div className={`${timerClass} text-white px-4 py-2 rounded-lg font-bold text-base lg:text-lg flex items-center gap-2 shadow-lg`}>
-                <Clock className="w-4 h-4" />
-                {formatTime(timeRemaining ?? 0)}
-              </div>
-              <button 
-                onClick={() => setShowCalculator(!showCalculator)}
-                className={`flex items-center gap-1 px-4 py-2 text-sm font-semibold rounded-lg border transition-colors ${
-                  showCalculator
-                    ? 'bg-blue-600 text-white border-blue-700 hover:bg-blue-700'
-                    : 'text-gray-700 bg-white border-gray-300 hover:bg-gray-100'
-                }`}
-                title="Graphing Calculator"
-              >
-                <Calculator className="w-4 h-4" />
-                <span className="hidden md:inline">Calculator</span>
-              </button>
-              <button 
-                onClick={() => setHidePassage(!hidePassage)}
-                className="hidden md:flex items-center gap-1 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100 rounded-lg border border-gray-300 transition-colors"
-              >
-                <Eye className={`w-4 h-4 ${hidePassage ? 'text-gray-400' : 'text-blue-600'}`} />
-                {hidePassage ? 'Show' : 'Hide'}
-              </button>
-              <button 
-                onClick={() => navigate('/dashboard')}
-                className="hidden lg:flex items-center gap-1 px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <Home className="w-4 h-4" />
-                Exit
-              </button>
+            <div>
+              <h1 className="text-base font-bold text-gray-900">
+                {currentSection.name}
+              </h1>
+              <p className="text-xs text-gray-500">Section</p>
             </div>
           </div>
-
-          {/* Enhanced Progress Indicator */}
-          <div className="mt-3">
-            <div className="flex items-center justify-between text-xs text-gray-600 mb-1">
-              <span>Question {idx + 1} of {currentQuestions?.length || 0}</span>
-              <span className="font-medium text-blue-600">
-                {Object.keys(localAnswers).length + Object.keys(freeResponseAnswers).filter(k => freeResponseAnswers[k]).length} answered
-              </span>
-            </div>
-            <div className="h-2.5 bg-gray-200 rounded-full overflow-hidden relative shadow-inner">
-              {/* Multi-color gradient background */}
-              <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 via-purple-500 to-green-500 opacity-30"></div>
-              {/* Active progress */}
-              <div 
-                className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-600 to-blue-500 transition-all duration-700 ease-out shadow-md"
-                style={{ width: `${((idx + 1) / (currentQuestions?.length || 1)) * 100}%` }}
-              />
-            </div>
+          <div className={`${timerClass} text-white px-4 py-1.5 rounded-lg flex items-center gap-2`}>
+            <Clock className="w-4 h-4" />
+            <span className="font-semibold">{formatTime(timeRemaining ?? 0)}</span>
           </div>
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+          >
+            <Home className="w-4 h-4" /> Dashboard
+          </button>
         </div>
       </div>
 
-      {/* Main Split View - Enhanced Design */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* Left Pane - Passage */}
-        {!hidePassage && (
-          <div className="w-full md:w-1/2 bg-white border-r-2 border-blue-100 overflow-y-auto flex-shrink-0 shadow-lg">
-            <div className="p-6 lg:p-8 max-w-4xl">
-              {q?.passage_text ? (
-                <div className="prose prose-lg max-w-none">
-                  <div className="text-gray-800 leading-relaxed whitespace-pre-wrap font-serif text-base lg:text-lg selection:bg-yellow-200">
-                    {q.passage_text}
-                  </div>
-                </div>
-              ) : (
-                <div className="flex items-center justify-center h-96 text-gray-400">
-                  <div className="text-center">
-                    <BookOpen className="w-20 h-20 mx-auto mb-4 opacity-40" />
-                    <p className="text-lg font-medium">No passage for this question</p>
-                  </div>
-                </div>
-              )}
-            </div>
-
-             {/* Question Image if exists */}
-              {q?.image && (
-                <div className="mt-6 rounded-lg overflow-hidden border-2 border-gray-200 shadow-md">
-                  <img 
-                    src={q.image} 
-                    alt="Question illustration"
-                    className="max-h-[600px] w-auto object-contain bg-gray-50"
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                    }}
-                  />
-                </div>
-              )}
-          </div>
-        )}
-
-        {/* Right Pane - Question & Answers */}
-        <div className={`${hidePassage ? 'w-full' : 'w-full md:w-1/2'} bg-gradient-to-br from-white to-blue-50 overflow-y-auto flex-shrink-0`}>
-          <div className="p-4 lg:p-8 max-w-4xl mx-auto">
-            {/* Mobile passage accordion */}
-            {q?.passage_text && (
-              <div className="md:hidden mb-6">
-                <details className="border-2 border-blue-200 rounded-xl overflow-hidden shadow-md">
-                  <summary className="px-4 py-3 cursor-pointer bg-gradient-to-r from-blue-50 to-white font-semibold text-gray-800 flex items-center justify-between hover:bg-blue-100 transition-colors">
-                    <span className="flex items-center gap-2">
-                      <BookOpen className="w-5 h-5 text-blue-600" />
-                      View Passage
-                    </span>
-                    <ChevronDown className="w-5 h-5 text-blue-600" />
-                  </summary>
-                  <div className="p-4 text-sm text-gray-800 leading-relaxed whitespace-pre-wrap font-serif max-h-80 overflow-y-auto bg-white">
-                    {q.passage_text}
-                  </div>
-                </details>
+      {/* Two-pane like Bluebook */}
+      <div className="max-w-7xl mx-auto px-6 py-5 grid grid-cols-12 gap-6 flex-1">
+        {/* Left: passage (if present) */}
+        <aside className="col-span-5">
+          <div className="bg-white border rounded-lg p-5 min-h-[60vh]">
+            {q?.passage_text ? (
+              <div className="prose max-w-none">
+                <p className="text-gray-800 whitespace-pre-wrap leading-relaxed">
+                  {q.passage_text}
+                </p>
               </div>
+            ) : (
+              <div className="text-gray-400">No passage for this question.</div>
             )}
+          </div>
+        </aside>
 
-            {/* Question Header with Enhanced Design */}
-            <div className="flex items-center justify-between mb-6 pb-4 border-b-2 border-blue-100">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-xl font-bold flex items-center justify-center text-xl shadow-lg">
-                  {idx + 1}
-                </div>
-                <button
-                  onClick={toggleMark}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border-2 transition-all shadow-md ${
-                    marked[q?.id]
-                      ? 'bg-red-500 text-white border-red-600 hover:bg-red-600'
-                      : 'bg-white text-gray-700 border-gray-300 hover:border-red-400 hover:text-red-600'
-                  }`}
-                >
-                  <Flag className="w-4 h-4" />
-                  <span className="hidden sm:inline">
-                    {marked[q?.id] ? 'Marked' : 'Mark for Review'}
-                  </span>
-                  <span className="sm:hidden">Mark</span>
-                </button>
+        {/* Right: question + choices */}
+        <main className="col-span-7 flex flex-col">
+          <div className="bg-white border rounded-lg p-5 flex-1">
+            {/* header row: number + tools */}
+            <div className="flex items-center justify-between mb-4">
+              <div className="text-sm text-gray-500">
+                Question {idx + 1} of {currentQuestions.length}
               </div>
-
-              {/* Tools - Right Side */}
               <div className="flex items-center gap-2">
-                {/* Note button */}
+                <button
+                  onClick={() => setHidePassage(!hidePassage)}
+                  className={`p-2.5 rounded-lg border-2 transition-colors shadow-sm ${
+                    hidePassage
+                      ? 'bg-blue-100 text-blue-600 border-blue-200'
+                      : 'text-gray-600 border-gray-200 hover:bg-gray-50'
+                  }`}
+                  title={hidePassage ? 'Show Passage' : 'Hide Passage'}
+                >
+                  {hidePassage ? <Eye className="w-5 h-5" /> : <X className="w-5 h-5" />}
+                </button>
+                <button
+                  onClick={() => {
+                    if (q?.choices && localAnswers[q.id]) {
+                      setLocalAnswers((prev) => {
+                        const newAnswers = { ...prev };
+                        delete newAnswers[q.id];
+                        return newAnswers;
+                      });
+                      saveLocalAnswer(q.id, null);
+                    } else if (freeResponseAnswers[q.id]) {
+                      setFreeResponseAnswers((prev) => {
+                        const newAnswers = { ...prev };
+                        delete newAnswers[q.id];
+                        return newAnswers;
+                      });
+                      saveLocalAnswer(q.id, null);
+                    }
+                  }}
+                  disabled={!(localAnswers[q?.id] || freeResponseAnswers[q?.id])}
+                  className="p-2.5 text-gray-600 hover:bg-gray-50 rounded-lg border-2 border-gray-200 transition-colors shadow-sm disabled:text-gray-400 disabled:cursor-not-allowed"
+                  title="Clear Answer"
+                >
+                  <Undo className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => setShowCalculator(!showCalculator)}
+                  className={`p-2.5 rounded-lg border-2 transition-colors shadow-sm ${
+                    showCalculator
+                      ? 'bg-blue-100 text-blue-600 border-blue-200'
+                      : 'text-gray-600 border-gray-200 hover:bg-gray-50'
+                  }`}
+                  title="Calculator"
+                >
+                  <Calculator className="w-5 h-5" />
+                </button>
                 <button
                   onClick={handleNoteOpen}
-                  className={`p-2.5 rounded-lg border-2 transition-all shadow-sm ${
-                    notes[q?.id]
-                      ? 'bg-amber-100 text-amber-700 border-amber-300 hover:bg-amber-200'
-                      : 'text-gray-600 hover:bg-amber-50 border-gray-300 hover:border-amber-300'
-                  }`}
+                  className="p-2.5 text-amber-600 hover:bg-amber-50 rounded-lg border-2 border-amber-200 transition-colors shadow-sm"
                   title="Add Note"
                 >
                   <StickyNote className="w-5 h-5" />
                 </button>
-                
                 <button
                   onClick={() => setShowPreview(true)}
                   className="p-2.5 text-blue-600 hover:bg-blue-100 rounded-lg border-2 border-blue-200 transition-colors shadow-sm"
@@ -621,8 +547,6 @@ const TestPage = () => {
               <p className="text-lg lg:text-xl text-gray-900 leading-relaxed font-medium whitespace-pre-wrap">
                 {q?.question_text}
               </p>
-              
-             
             </div>
 
             {/* Answer Section - Conditional based on question type */}
@@ -640,10 +564,8 @@ const TestPage = () => {
                           Enter your answer:
                         </span>
                       </div>
-                      
-                      {/* Send Button */}
-                      {/* <button
-                        onClick={handleFreeResponseChange(e, q.id)                        }
+                      <button
+                        onClick={handleFreeResponseSubmit}
                         id={`send-btn-${q.id}`}
                         disabled={!freeResponseAnswers[q.id] || !freeResponseAnswers[q.id].trim()}
                         className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
@@ -654,9 +576,8 @@ const TestPage = () => {
                       >
                         <Send className="w-4 h-4" />
                         <span>Submit</span>
-                      </button> */}
+                      </button>
                     </div>
-                    
                     <div className="relative">
                       <input
                         type="text"
@@ -678,7 +599,6 @@ const TestPage = () => {
                       )}
                     </div>
                   </label>
-                  
                   {/* Helper text */}
                   <div className="mt-3 p-3 bg-blue-100 rounded-lg border border-blue-200">
                     <div className="flex items-start gap-2">
@@ -694,7 +614,6 @@ const TestPage = () => {
                       </div>
                     </div>
                   </div>
-                  
                   {/* Answer preview */}
                   {freeResponseAnswers[q.id] && freeResponseAnswers[q.id].trim() && (
                     <div className="mt-4 p-4 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-xl shadow-sm">
@@ -722,7 +641,6 @@ const TestPage = () => {
                 {q?.choices?.map((choice) => {
                   const isSelected = selectedChoiceId === choice.id;
                   const isStriked = strikethroughs[q?.id]?.includes(choice.id);
-                  
                   return (
                     <div key={choice.id} className="relative group">
                       <button
@@ -735,11 +653,9 @@ const TestPage = () => {
                             : 'border-gray-300 bg-white hover:border-blue-400 hover:bg-blue-50 hover:shadow-md'
                         }`}
                       >
-                        {/* Selection indicator line */}
                         {isSelected && (
                           <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-blue-600 to-blue-400"></div>
                         )}
-                        
                         <div className={`flex items-start gap-4 ${isStriked ? 'line-through' : ''}`}>
                           <div className={`w-10 h-10 rounded-xl border-2 flex items-center justify-center font-bold text-lg flex-shrink-0 transition-all ${
                             isSelected 
@@ -762,8 +678,6 @@ const TestPage = () => {
                           )}
                         </div>
                       </button>
-                      
-                      {/* Strikethrough button */}
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -805,13 +719,12 @@ const TestPage = () => {
               </div>
             )}
           </div>
-        </div>
+        </main>
       </div>
 
       {/* Bottom Navigation Bar - Enhanced Modern Design */}
       <div className="bg-gradient-to-r from-white to-blue-50 border-t-2 border-blue-200 px-4 py-4 flex-shrink-0 shadow-2xl">
         <div className="flex items-center justify-between max-w-7xl mx-auto">
-          {/* Left: Back to dashboard */}
           <button
             onClick={() => navigate('/dashboard')}
             className="flex items-center gap-2 text-gray-600 hover:text-blue-600 font-medium transition-colors"
@@ -819,8 +732,6 @@ const TestPage = () => {
             <ArrowLeft className="w-5 h-5" />
             <span className="hidden sm:inline">Dashboard</span>
           </button>
-
-          {/* Center: Question selector with navigation */}
           <div className="flex items-center gap-3">
             <button
               onClick={goPrev}
@@ -829,7 +740,6 @@ const TestPage = () => {
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
-
             <button
               onClick={() => setShowPreview(true)}
               className="bg-gradient-to-r from-gray-900 to-gray-800 text-white px-5 py-2.5 rounded-xl flex items-center gap-2 font-semibold hover:from-gray-800 hover:to-gray-700 transition-all shadow-lg"
@@ -837,7 +747,6 @@ const TestPage = () => {
               <span className="text-sm lg:text-base">Question {idx + 1} of {currentQuestions?.length || 0}</span>
               <ChevronDown className="w-4 h-4" />
             </button>
-
             <button
               onClick={goNext}
               disabled={idx === currentQuestions?.length - 1}
@@ -846,8 +755,6 @@ const TestPage = () => {
               <ArrowRight className="w-5 h-5" />
             </button>
           </div>
-
-          {/* Right: Next/Finish button */}
           <div>
             {idx === currentQuestions?.length - 1 ? (
               <button
@@ -874,7 +781,6 @@ const TestPage = () => {
       {showNoteModal && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
           <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden">
-            {/* Header */}
             <div className="bg-gradient-to-r from-amber-500 to-amber-400 p-6 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg">
@@ -892,8 +798,6 @@ const TestPage = () => {
                 <X className="w-6 h-6" />
               </button>
             </div>
-
-            {/* Content */}
             <div className="p-6">
               <div className="mb-4">
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -910,8 +814,6 @@ const TestPage = () => {
                   {currentNote.length} characters
                 </p>
               </div>
-
-              {/* Actions */}
               <div className="flex gap-3">
                 {notes[q?.id] && (
                   <button
@@ -943,7 +845,6 @@ const TestPage = () => {
       {showConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
           <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden">
-            {/* Header with icon */}
             <div className="bg-gradient-to-r from-green-600 to-green-500 p-6">
               <div className="flex items-center gap-4">
                 <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-lg">
@@ -955,15 +856,11 @@ const TestPage = () => {
                 </div>
               </div>
             </div>
-
-            {/* Content */}
             <div className="p-6">
               <p className="text-gray-700 mb-6 leading-relaxed">
-                Once you submit this section, you <strong>won't be able to return to it</strong>. 
-                Please make sure you've answered all questions you want to complete.
+                Once you submit this section, you <strong>won’t be able to return to it</strong>. 
+                Please make sure you’ve answered all questions you want to complete.
               </p>
-
-              {/* Summary Cards */}
               <div className="grid grid-cols-3 gap-3 mb-6">
                 <div className="bg-blue-50 rounded-xl p-4 text-center border border-blue-200">
                   <div className="text-3xl font-bold text-blue-600">{currentQuestions?.length || 0}</div>
@@ -982,8 +879,6 @@ const TestPage = () => {
                   <div className="text-xs text-gray-600 font-medium mt-1">Unanswered</div>
                 </div>
               </div>
-
-              {/* Warning if unanswered */}
               {(currentQuestions?.length || 0) - (Object.keys(localAnswers).length + Object.keys(freeResponseAnswers).filter(k => freeResponseAnswers[k]).length) > 0 && (
                 <div className="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-lg mb-6">
                   <div className="flex items-start gap-3">
@@ -998,8 +893,6 @@ const TestPage = () => {
                   </div>
                 </div>
               )}
-
-              {/* Action Buttons */}
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowConfirm(false)}
@@ -1129,11 +1022,3 @@ const TestPage = () => {
 };
 
 export default TestPage;
-
-
-
-
-
-
-
-

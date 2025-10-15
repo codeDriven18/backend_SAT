@@ -100,6 +100,64 @@ const useAuthStore = create((set, get) => ({
     });
   },
 
+  // Update profile
+  updateProfile: async (profileData) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await authApi.updateProfile(profileData);
+      
+      // Update local storage and state
+      const updatedUser = { ...get().user, ...response };
+      localStorage.setItem('userData', JSON.stringify(updatedUser));
+      
+      set({
+        user: updatedUser,
+        isLoading: false,
+        error: null
+      });
+      
+      return response;
+    } catch (error) {
+      const errorMessage = error.response?.data?.detail || 
+                          error.response?.data?.message || 
+                          'Failed to update profile';
+      set({
+        error: errorMessage,
+        isLoading: false
+      });
+      throw error;
+    }
+  },
+
+  // Update profile picture
+  updateProfilePicture: async (file) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await authApi.updateProfilePicture(file);
+      
+      // Update local storage and state
+      const updatedUser = { ...get().user, ...response };
+      localStorage.setItem('userData', JSON.stringify(updatedUser));
+      
+      set({
+        user: updatedUser,
+        isLoading: false,
+        error: null
+      });
+      
+      return response;
+    } catch (error) {
+      const errorMessage = error.response?.data?.detail || 
+                          error.response?.data?.message || 
+                          'Failed to update profile picture';
+      set({
+        error: errorMessage,
+        isLoading: false
+      });
+      throw error;
+    }
+  },
+
   // Clear error
   clearError: () => {
     set({ error: null });

@@ -1,18 +1,18 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Eye, EyeOff, UserPlus, BookOpen } from 'lucide-react';
-import useAuthStore from '../store/useAuthStore';
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
+import { Eye, EyeOff, UserPlus, BookOpen } from "lucide-react";
+import useAuthStore from "../store/useAuthStore";
 
 const RegisterPage = () => {
   const [formData, setFormData] = useState({
-    username: '',
-    email: '',
-    first_name: '',
-    last_name: '',
-    password: '',
-    password_confirm: '',
-    user_type: 'teacher',
-    phone_number: ''
+    username: "",
+    email: "",
+    first_name: "",
+    last_name: "",
+    password: "",
+    password_confirm: "",
+    user_type: "teacher",
+    phone_number: "",
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -27,10 +27,10 @@ const RegisterPage = () => {
     // Client-side validation
     const newErrors = {};
     if (formData.password !== formData.password_confirm) {
-      newErrors.password_confirm = 'Passwords do not match';
+      newErrors.password_confirm = "Passwords do not match";
     }
     if (formData.password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters';
+      newErrors.password = "Password must be at least 8 characters";
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -40,24 +40,29 @@ const RegisterPage = () => {
     }
 
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8000'}/api/auth/register/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
+      const response = await fetch(
+        `${
+          import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"
+        }/api/auth/register/`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formData),
+        }
+      );
 
       const data = await response.json();
 
       if (response.ok) {
-        alert('Registration successful! Please login with your credentials.');
-        window.location.href = '/login';
+        alert("Registration successful! Please login with your credentials.");
+        window.location.href = "/login";
       } else {
         setErrors(data);
       }
     } catch (error) {
-      setErrors({ general: 'Registration failed. Please try again.' });
+      setErrors({ general: "Registration failed. Please try again." });
     } finally {
       setLoading(false);
     }
@@ -66,13 +71,13 @@ const RegisterPage = () => {
   const handleInputChange = (e) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
     // Clear error when user starts typing
     if (errors[e.target.name]) {
       setErrors({
         ...errors,
-        [e.target.name]: undefined
+        [e.target.name]: undefined,
       });
     }
   };
@@ -84,12 +89,14 @@ const RegisterPage = () => {
           {/* Header */}
           <div className="text-center mb-8">
             <div className="flex items-center justify-center mb-4">
-              <div className="w-12 h-12 bg-emerald-600 rounded-xl flex items-center justify-center">
-                <BookOpen className="w-6 h-6 text-white" />
+              <div className="flex items-center space-x-2 h-12 mb-10">
+                <img src="/logo.png" alt="" />
               </div>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Create Account</h1>
-            <p className="text-gray-600">Join the SATASHKENT community</p>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+              Create Account
+            </h1>
+            <p className="text-gray-600">Join the 4Prep community</p>
           </div>
 
           {/* Error Messages */}
@@ -114,7 +121,11 @@ const RegisterPage = () => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                   placeholder="John"
                 />
-                {errors.first_name && <p className="text-xs text-red-600 mt-1">{errors.first_name}</p>}
+                {errors.first_name && (
+                  <p className="text-xs text-red-600 mt-1">
+                    {errors.first_name}
+                  </p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -128,7 +139,11 @@ const RegisterPage = () => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                   placeholder="Doe"
                 />
-                {errors.last_name && <p className="text-xs text-red-600 mt-1">{errors.last_name}</p>}
+                {errors.last_name && (
+                  <p className="text-xs text-red-600 mt-1">
+                    {errors.last_name}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -145,7 +160,9 @@ const RegisterPage = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                 placeholder="johndoe"
               />
-              {errors.username && <p className="text-xs text-red-600 mt-1">{errors.username}</p>}
+              {errors.username && (
+                <p className="text-xs text-red-600 mt-1">{errors.username}</p>
+              )}
             </div>
 
             <div>
@@ -160,7 +177,9 @@ const RegisterPage = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                 placeholder="john@example.com"
               />
-              {errors.email && <p className="text-xs text-red-600 mt-1">{errors.email}</p>}
+              {errors.email && (
+                <p className="text-xs text-red-600 mt-1">{errors.email}</p>
+              )}
             </div>
 
             <div>
@@ -175,7 +194,11 @@ const RegisterPage = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                 placeholder="+1234567890"
               />
-              {errors.phone_number && <p className="text-xs text-red-600 mt-1">{errors.phone_number}</p>}
+              {errors.phone_number && (
+                <p className="text-xs text-red-600 mt-1">
+                  {errors.phone_number}
+                </p>
+              )}
             </div>
 
             <div>
@@ -212,10 +235,16 @@ const RegisterPage = () => {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500"
                 >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
                 </button>
               </div>
-              {errors.password && <p className="text-xs text-red-600 mt-1">{errors.password}</p>}
+              {errors.password && (
+                <p className="text-xs text-red-600 mt-1">{errors.password}</p>
+              )}
             </div>
 
             <div>
@@ -237,10 +266,18 @@ const RegisterPage = () => {
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500"
                 >
-                  {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showConfirmPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
                 </button>
               </div>
-              {errors.password_confirm && <p className="text-xs text-red-600 mt-1">{errors.password_confirm}</p>}
+              {errors.password_confirm && (
+                <p className="text-xs text-red-600 mt-1">
+                  {errors.password_confirm}
+                </p>
+              )}
             </div>
 
             <button
@@ -262,8 +299,11 @@ const RegisterPage = () => {
           {/* Footer */}
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
-              Already have an account?{' '}
-              <Link to="/login" className="text-emerald-600 hover:text-emerald-700 font-medium">
+              Already have an account?{" "}
+              <Link
+                to="/login"
+                className="text-emerald-600 hover:text-emerald-700 font-medium"
+              >
                 Sign in
               </Link>
             </p>

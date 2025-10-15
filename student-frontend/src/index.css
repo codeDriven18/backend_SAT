@@ -64,6 +64,7 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  user-select: none; /* Prevent text selection during resize */
 }
 .animate-spin {
   animation: spin 1s linear infinite;
@@ -76,4 +77,23 @@ body {
   to {
     transform: rotate(360deg);
   }
+}
+
+/* Slide-in animation for calculator panel */
+.animate-slide-in {
+  animation: slideIn 0.3s ease-out forwards;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+/* Resize cursor */
+.cursor-col-resize {
+  cursor: col-resize !important;
 }

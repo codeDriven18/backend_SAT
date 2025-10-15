@@ -34,6 +34,20 @@ const useStudentStore = create((set, get) => ({
     }
   },
 
+  saveLocalAnswer: (questionId, choiceId = null, textAnswer = null) => {
+    set((state) => {
+      const updated = { ...state.currentAnswers };
+      if (choiceId !== null) {
+        updated[questionId] = choiceId; // MCQ
+      } else if (textAnswer !== null && textAnswer !== "") {
+        updated[questionId] = textAnswer; // math_free
+      } else {
+        delete updated[questionId]; // empty -> remove
+      }
+      return { currentAnswers: updated };
+    });
+  },
+
   // Start test
   // startTest: async (testId) => {
   //   try {
@@ -78,12 +92,19 @@ const useStudentStore = create((set, get) => ({
 
   submitBulkAnswers: async (testId, sectionId) => {
     const { currentAnswers } = get();
-    const answers = Object.entries(currentAnswers).map(([qid, cid]) => ({
-      question_id: Number(qid),
-      choice_id: cid ?? null,
-    }));
-    // even if answers is empty, backend should accept []
-    return studentApi.submitBulkAnswers(testId, sectionId, answers);
+    const answers = Object.entries(currentAnswers)
+    .filter(([qid]) => qid && !isNaN(Number(qid))) // ✅ remove undefined/NaN keys
+    .map(([qid, value]) => {
+      const questionId = parseInt(qid, 10); // safer conversion
+      if (typeof value === "number") {
+        return { question_id: questionId, choice_id: value };
+      } else {
+        return { question_id: questionId, text_answer: String(value).trim() };
+      }
+    });
+
+    console.log({answers});
+    return studentApi.submitBulkAnswers(testId, sectionId,  {answers} );
   },
 
   startSection: async (testId, sectionId) => {

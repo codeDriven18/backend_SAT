@@ -1,29 +1,29 @@
-import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { BookOpen, Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react';
-import useAuth from '../hooks/useAuth';
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { BookOpen, Eye, EyeOff, AlertCircle, CheckCircle } from "lucide-react";
+import useAuth from "../hooks/useAuth";
 
 const RegisterPage = () => {
   const [formData, setFormData] = useState({
-    username: '',
-    email: '',
-    first_name: '',
-    last_name: '',
-    phone_number: '',
-    password: '',
-    password_confirm: ''
+    username: "",
+    email: "",
+    first_name: "",
+    last_name: "",
+    phone_number: "",
+    password: "",
+    password_confirm: "",
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formErrors, setFormErrors] = useState({});
-  
+
   const { register, isLoading, error, clearError, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/dashboard', { replace: true });
+      navigate("/dashboard", { replace: true });
     }
   }, [isAuthenticated, navigate]);
 
@@ -37,35 +37,35 @@ const RegisterPage = () => {
     const errors = {};
 
     if (!formData.username.trim()) {
-      errors.username = 'Username is required';
+      errors.username = "Username is required";
     } else if (formData.username.length < 3) {
-      errors.username = 'Username must be at least 3 characters';
+      errors.username = "Username must be at least 3 characters";
     }
 
     if (!formData.email.trim()) {
-      errors.email = 'Email is required';
+      errors.email = "Email is required";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      errors.email = 'Please enter a valid email address';
+      errors.email = "Please enter a valid email address";
     }
 
     if (!formData.first_name.trim()) {
-      errors.first_name = 'First name is required';
+      errors.first_name = "First name is required";
     }
 
     if (!formData.last_name.trim()) {
-      errors.last_name = 'Last name is required';
+      errors.last_name = "Last name is required";
     }
 
     if (!formData.password) {
-      errors.password = 'Password is required';
+      errors.password = "Password is required";
     } else if (formData.password.length < 8) {
-      errors.password = 'Password must be at least 8 characters';
+      errors.password = "Password must be at least 8 characters";
     }
 
     if (!formData.password_confirm) {
-      errors.password_confirm = 'Please confirm your password';
+      errors.password_confirm = "Please confirm your password";
     } else if (formData.password !== formData.password_confirm) {
-      errors.password_confirm = 'Passwords do not match';
+      errors.password_confirm = "Passwords do not match";
     }
 
     setFormErrors(errors);
@@ -74,26 +74,26 @@ const RegisterPage = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
-    
+
     // Clear specific field error when user starts typing
     if (formErrors[name]) {
-      setFormErrors(prev => ({
+      setFormErrors((prev) => ({
         ...prev,
-        [name]: ''
+        [name]: "",
       }));
     }
-    
+
     // Clear general error
     if (error) clearError();
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -102,9 +102,9 @@ const RegisterPage = () => {
       await register(formData);
       // If registration is successful and includes auto-login, navigate to dashboard
       // Otherwise, you might want to show a success message and redirect to login
-      navigate('/dashboard');
+      navigate("/dashboard");
     } catch (err) {
-      console.error('Registration failed:', err);
+      console.error("Registration failed:", err);
     }
   };
 
@@ -113,8 +113,8 @@ const RegisterPage = () => {
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-full mb-4">
-            <BookOpen className="w-8 h-8 text-white" />
+          <div className="flex items-center space-x-2 h-12 mb-10">
+            <img src="/logo.png" alt="" />
           </div>
           <h1 className="text-3xl font-bold text-gray-900">Join EduPlatform</h1>
           <p className="text-gray-600 mt-2">Create your student account</p>
@@ -128,7 +128,9 @@ const RegisterPage = () => {
               <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
                 <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
                 <div>
-                  <h3 className="text-sm font-medium text-red-800">Registration Failed</h3>
+                  <h3 className="text-sm font-medium text-red-800">
+                    Registration Failed
+                  </h3>
                   <p className="text-sm text-red-600 mt-1">{error}</p>
                 </div>
               </div>
@@ -137,7 +139,10 @@ const RegisterPage = () => {
             {/* Name Fields */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label htmlFor="first_name" className="block text-sm font-medium text-gray-700 mb-2">
+                <label
+                  htmlFor="first_name"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
                   First Name
                 </label>
                 <input
@@ -147,20 +152,25 @@ const RegisterPage = () => {
                   value={formData.first_name}
                   onChange={handleInputChange}
                   className={`w-full px-4 py-3 border rounded-lg transition-colors ${
-                    formErrors.first_name 
-                      ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
-                      : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                    formErrors.first_name
+                      ? "border-red-300 focus:ring-red-500 focus:border-red-500"
+                      : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
                   }`}
                   placeholder="First name"
                   disabled={isLoading}
                 />
                 {formErrors.first_name && (
-                  <p className="text-red-600 text-sm mt-1">{formErrors.first_name}</p>
+                  <p className="text-red-600 text-sm mt-1">
+                    {formErrors.first_name}
+                  </p>
                 )}
               </div>
-              
+
               <div>
-                <label htmlFor="last_name" className="block text-sm font-medium text-gray-700 mb-2">
+                <label
+                  htmlFor="last_name"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
                   Last Name
                 </label>
                 <input
@@ -170,22 +180,27 @@ const RegisterPage = () => {
                   value={formData.last_name}
                   onChange={handleInputChange}
                   className={`w-full px-4 py-3 border rounded-lg transition-colors ${
-                    formErrors.last_name 
-                      ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
-                      : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                    formErrors.last_name
+                      ? "border-red-300 focus:ring-red-500 focus:border-red-500"
+                      : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
                   }`}
                   placeholder="Last name"
                   disabled={isLoading}
                 />
                 {formErrors.last_name && (
-                  <p className="text-red-600 text-sm mt-1">{formErrors.last_name}</p>
+                  <p className="text-red-600 text-sm mt-1">
+                    {formErrors.last_name}
+                  </p>
                 )}
               </div>
             </div>
 
             {/* Username Field */}
             <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="username"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Username
               </label>
               <input
@@ -195,21 +210,26 @@ const RegisterPage = () => {
                 value={formData.username}
                 onChange={handleInputChange}
                 className={`w-full px-4 py-3 border rounded-lg transition-colors ${
-                  formErrors.username 
-                    ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
-                    : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                  formErrors.username
+                    ? "border-red-300 focus:ring-red-500 focus:border-red-500"
+                    : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
                 }`}
                 placeholder="Choose a username"
                 disabled={isLoading}
               />
               {formErrors.username && (
-                <p className="text-red-600 text-sm mt-1">{formErrors.username}</p>
+                <p className="text-red-600 text-sm mt-1">
+                  {formErrors.username}
+                </p>
               )}
             </div>
 
             {/* Email Field */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Email Address
               </label>
               <input
@@ -219,9 +239,9 @@ const RegisterPage = () => {
                 value={formData.email}
                 onChange={handleInputChange}
                 className={`w-full px-4 py-3 border rounded-lg transition-colors ${
-                  formErrors.email 
-                    ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
-                    : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                  formErrors.email
+                    ? "border-red-300 focus:ring-red-500 focus:border-red-500"
+                    : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
                 }`}
                 placeholder="your.email@example.com"
                 disabled={isLoading}
@@ -233,7 +253,10 @@ const RegisterPage = () => {
 
             {/* Phone Field (Optional) */}
             <div>
-              <label htmlFor="phone_number" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="phone_number"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Phone Number <span className="text-gray-400">(Optional)</span>
               </label>
               <input
@@ -250,20 +273,23 @@ const RegisterPage = () => {
 
             {/* Password Fields */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Password
               </label>
               <div className="relative">
                 <input
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   id="password"
                   name="password"
                   value={formData.password}
                   onChange={handleInputChange}
                   className={`w-full px-4 py-3 border rounded-lg transition-colors pr-12 ${
-                    formErrors.password 
-                      ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
-                      : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                    formErrors.password
+                      ? "border-red-300 focus:ring-red-500 focus:border-red-500"
+                      : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
                   }`}
                   placeholder="Create a password"
                   disabled={isLoading}
@@ -274,29 +300,38 @@ const RegisterPage = () => {
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                   disabled={isLoading}
                 >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
                 </button>
               </div>
               {formErrors.password && (
-                <p className="text-red-600 text-sm mt-1">{formErrors.password}</p>
+                <p className="text-red-600 text-sm mt-1">
+                  {formErrors.password}
+                </p>
               )}
             </div>
 
             <div>
-              <label htmlFor="password_confirm" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="password_confirm"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Confirm Password
               </label>
               <div className="relative">
                 <input
-                  type={showConfirmPassword ? 'text' : 'password'}
+                  type={showConfirmPassword ? "text" : "password"}
                   id="password_confirm"
                   name="password_confirm"
                   value={formData.password_confirm}
                   onChange={handleInputChange}
                   className={`w-full px-4 py-3 border rounded-lg transition-colors pr-12 ${
-                    formErrors.password_confirm 
-                      ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
-                      : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                    formErrors.password_confirm
+                      ? "border-red-300 focus:ring-red-500 focus:border-red-500"
+                      : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
                   }`}
                   placeholder="Confirm your password"
                   disabled={isLoading}
@@ -307,11 +342,17 @@ const RegisterPage = () => {
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                   disabled={isLoading}
                 >
-                  {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showConfirmPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
                 </button>
               </div>
               {formErrors.password_confirm && (
-                <p className="text-red-600 text-sm mt-1">{formErrors.password_confirm}</p>
+                <p className="text-red-600 text-sm mt-1">
+                  {formErrors.password_confirm}
+                </p>
               )}
             </div>
 
@@ -327,7 +368,7 @@ const RegisterPage = () => {
                   Creating Account...
                 </>
               ) : (
-                'Create Account'
+                "Create Account"
               )}
             </button>
           </form>
@@ -335,9 +376,9 @@ const RegisterPage = () => {
           {/* Login Link */}
           <div className="mt-6 text-center">
             <p className="text-gray-600">
-              Already have an account?{' '}
-              <Link 
-                to="/login" 
+              Already have an account?{" "}
+              <Link
+                to="/login"
                 className="text-blue-600 hover:text-blue-700 font-medium transition-colors"
               >
                 Sign in here

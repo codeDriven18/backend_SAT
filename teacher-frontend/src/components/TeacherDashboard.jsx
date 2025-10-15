@@ -1,10 +1,9 @@
-import NotificationBell from './NotificationBell';
-import React, { useState, useEffect } from 'react';
-import { 
-  Users, 
-  BookOpen, 
-  ClipboardList, 
-  TrendingUp, 
+import React, { useState, useEffect } from "react";
+import {
+  Users,
+  BookOpen,
+  ClipboardList,
+  TrendingUp,
   Plus,
   Search,
   Settings,
@@ -15,26 +14,36 @@ import {
   Award,
   UserCheck,
   BarChart3,
-  Eye,
   Edit,
   Trash2,
   Filter,
-  LogOut
-} from 'lucide-react';
-import useAuthStore from '../store/useAuthStore';
-import useTeacherStore from '../store/useTeacherStore';
-import CreateGroupModal from './modals/CreateGroupModal';
-import CreateTestModal from './modals/CreateTestModal';
-import GroupDetails from './modals/GroupDetails';
-import AssignmentsPage from './AssignmentsPage';
-import LibraryPage from './LibraryPage';
-import ProfileSettings from './ProfileSettings';
+  LogOut,
+  User,
+} from "lucide-react";
+import useAuthStore from "../store/useAuthStore";
+import useTeacherStore from "../store/useTeacherStore";
+import CreateGroupModal from "./modals/CreateGroupModal";
+import CreateTestModal from "./modals/CreateTestModal";
+import EditGroupModal from "./modals/EditGroupModal";
+import EditTestModal from "./modals/EditTestModal";
+import TestAnalyticsModal from "./modals/TestAnalyticsModal";
+import GroupDetails from "./modals/GroupDetails";
+import AssignmentsPage from "./AssignmentsPage";
+import LibraryPage from "./LibraryPage";
+import NotificationBell from "./NotificationBell";
+import ProfileSettings from "../pages/ProfileSettings";
 
 const TeacherDashboard = () => {
-  const [activeTab, setActiveTab] = useState('dashboard');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState("dashboard");
+  const [searchQuery, setSearchQuery] = useState("");
   const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
   const [showCreateTestModal, setShowCreateTestModal] = useState(false);
+  const [showEditGroupModal, setShowEditGroupModal] = useState(false);
+  const [showEditTestModal, setShowEditTestModal] = useState(false);
+  const [showTestAnalytics, setShowTestAnalytics] = useState(false);
+  const [editingGroup, setEditingGroup] = useState(null);
+  const [editingTest, setEditingTest] = useState(null);
+  const [analyticsTestId, setAnalyticsTestId] = useState(null);
   const [activeTab1, setActiveTab1] = useState("groups");
   const [selectedGroupId, setSelectedGroupId] = useState(null);
 
@@ -49,59 +58,77 @@ const TeacherDashboard = () => {
     fetchGroups,
     fetchTests,
     deleteGroup,
-    deleteTest
+    deleteTest,
   } = useTeacherStore();
 
   useEffect(() => {
-    if (activeTab === 'dashboard') {
+    if (activeTab === "dashboard") {
       fetchDashboardStats();
-    } else if (activeTab === 'groups') {
+    } else if (activeTab === "groups") {
       fetchGroups();
-    } else if (activeTab === 'tests') {
+    } else if (activeTab === "tests") {
       fetchTests();
     }
   }, [activeTab]);
 
-
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return new Date(dateString).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
   const getStatusColor = (status) => {
     const colors = {
-      completed: 'text-emerald-600 bg-emerald-50',
-      in_progress: 'text-blue-600 bg-blue-50',
-      not_started: 'text-gray-600 bg-gray-50'
+      completed: "text-emerald-600 bg-emerald-50",
+      in_progress: "text-blue-600 bg-blue-50",
+      not_started: "text-gray-600 bg-gray-50",
     };
-    return colors[status] || 'text-gray-600 bg-gray-50';
+    return colors[status] || "text-gray-600 bg-gray-50";
   };
 
   const handleDeleteGroup = async (id) => {
-    if (window.confirm('Are you sure you want to delete this group?')) {
+    if (window.confirm("Are you sure you want to delete this group?")) {
       const result = await deleteGroup(id);
       if (!result.success) {
-        alert('Failed to delete group: ' + result.error);
+        alert("Failed to delete group: " + result.error);
       }
     }
+  };
+
+  const handleEditGroup = (group) => {
+    setEditingGroup(group);
+    setShowEditGroupModal(true);
   };
 
   const handleDeleteTest = async (id) => {
-    if (window.confirm('Are you sure you want to delete this test?')) {
+    if (window.confirm("Are you sure you want to delete this test?")) {
       const result = await deleteTest(id);
       if (!result.success) {
-        alert('Failed to delete test: ' + result.error);
+        alert("Failed to delete test: " + result.error);
       }
     }
   };
 
-  
+  const handleEditTest = (test) => {
+    setEditingTest(test);
+    setShowEditTestModal(true);
+  };
 
-  const StatCard = ({ icon: Icon, title, value, subtitle, color = "emerald" }) => (
+  const handleShowAnalytics = (testId) => {
+    setAnalyticsTestId(testId);
+    setShowTestAnalytics(true);
+  };
+
+  const StatCard = ({
+    icon: Icon,
+    title,
+    value,
+    subtitle,
+    color = "emerald",
+  }) => (
     <div className="bg-white p-6 rounded-xl border border-gray-100 hover:shadow-lg transition-shadow">
       <div className="flex items-center justify-between">
         <div>
@@ -119,37 +146,28 @@ const TeacherDashboard = () => {
   const Sidebar = () => (
     <div className="w-64 bg-white border-r border-gray-200 h-screen overflow-y-auto">
       <div className="p-6">
-        <button 
-          onClick={() => setActiveTab('dashboard')}
-          className="flex items-center space-x-2 hover:bg-gray-50 p-2 rounded-lg transition-colors w-full text-left"
-        >
-          <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">$4$</span>
-          </div>
-          <div>
-            <h1 className="font-bold text-gray-900">4prep-SAT</h1>
-            <p className="text-xs text-gray-500">College Prep Community</p>
-          </div>
-        </button>
+        <div className="flex items-center space-x-2 h-12">
+          <img src="/logo.png" alt="" />
+        </div>
       </div>
 
       <nav className="px-4">
         {[
-          { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
-          { id: 'groups', label: 'Groups', icon: Users },
-          { id: 'tests', label: 'Tests', icon: BookOpen },
-          { id: 'assignments', label: 'Assignments', icon: ClipboardList },
-          { id: 'results', label: 'Results', icon: TrendingUp },
-          { id: 'library', label: 'Test Library', icon: BookOpen },
-          { id: 'profile', label: 'Profile', icon: Settings },
+          { id: "dashboard", label: "Dashboard", icon: BarChart3 },
+          { id: "groups", label: "Groups", icon: Users },
+          { id: "tests", label: "Tests", icon: BookOpen },
+          { id: "assignments", label: "Assignments", icon: ClipboardList },
+          { id: "results", label: "Results", icon: TrendingUp },
+          { id: "library", label: "Test Library", icon: BookOpen },
+          { id: "profile", label: "Profile Settings", icon: User },
         ].map((item) => (
           <button
             key={item.id}
             onClick={() => setActiveTab(item.id)}
             className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left mb-1 transition-colors ${
               activeTab === item.id
-                ? 'bg-emerald-50 text-emerald-600 border-r-2 border-emerald-600'
-                : 'text-gray-600 hover:bg-gray-50'
+                ? "bg-emerald-50 text-emerald-600 border-r-2 border-emerald-600"
+                : "text-gray-600 hover:bg-gray-50"
             }`}
           >
             <item.icon className="w-5 h-5" />
@@ -163,12 +181,12 @@ const TeacherDashboard = () => {
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
               <span className="text-gray-600 font-medium text-sm">
-                {user?.first_name?.[0] || user?.username?.[0] || 'T'}
+                {user?.first_name?.[0] || user?.username?.[0] || "T"}
               </span>
             </div>
             <div className="flex-1">
               <p className="text-sm font-medium text-gray-900">
-                {user?.first_name || user?.username || 'Teacher'}
+                {user?.first_name || user?.username || "Teacher"}
               </p>
               <p className="text-xs text-gray-500">{user?.email}</p>
             </div>
@@ -226,23 +244,38 @@ const TeacherDashboard = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="bg-white rounded-xl border border-gray-100 p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Recent Test Attempts</h3>
+              <h3 className="text-lg font-semibold text-gray-900">
+                Recent Test Attempts
+              </h3>
               <ChevronRight className="w-5 h-5 text-gray-400" />
             </div>
             <div className="space-y-4">
               {dashboardStats?.recent_attempts?.length > 0 ? (
                 dashboardStats.recent_attempts.map((attempt) => (
-                  <div key={attempt.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div
+                    key={attempt.id}
+                    className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
+                  >
                     <div className="flex-1">
-                      <p className="font-medium text-gray-900">{attempt.student_name}</p>
-                      <p className="text-sm text-gray-600">{attempt.test_title}</p>
-                      <p className="text-xs text-gray-500">{formatDate(attempt.started_at)}</p>
+                      <p className="font-medium text-gray-900">
+                        {attempt.student_name}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        {attempt.test_title}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {formatDate(attempt.started_at)}
+                      </p>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(attempt.status)}`}>
-                        {attempt.status.replace('_', ' ')}
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                          attempt.status
+                        )}`}
+                      >
+                        {attempt.status.replace("_", " ")}
                       </span>
-                      {attempt.status === 'completed' && (
+                      {attempt.status === "completed" && (
                         <span className="text-sm font-medium text-emerald-600">
                           {attempt.percentage}%
                         </span>
@@ -261,10 +294,12 @@ const TeacherDashboard = () => {
 
           <div className="bg-white rounded-xl border border-gray-100 p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Quick Actions</h3>
+              <h3 className="text-lg font-semibold text-gray-900">
+                Quick Actions
+              </h3>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <button 
+              <button
                 onClick={() => setShowCreateTestModal(true)}
                 className="p-4 text-left bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors border border-emerald-200"
               >
@@ -272,7 +307,7 @@ const TeacherDashboard = () => {
                 <p className="font-medium text-emerald-700">Create Test</p>
                 <p className="text-sm text-emerald-600">Build new assessment</p>
               </button>
-              <button 
+              <button
                 onClick={() => setShowCreateGroupModal(true)}
                 className="p-4 text-left bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors border border-blue-200"
               >
@@ -280,16 +315,18 @@ const TeacherDashboard = () => {
                 <p className="font-medium text-blue-700">Create Group</p>
                 <p className="text-sm text-blue-600">Organize students</p>
               </button>
-              <button 
-                onClick={() => setActiveTab('library')}
+              <button
+                onClick={() => setActiveTab("library")}
                 className="p-4 text-left bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors border border-purple-200"
               >
                 <BookOpen className="w-6 h-6 text-purple-600 mb-2" />
                 <p className="font-medium text-purple-700">Test Library</p>
-                <p className="text-sm text-purple-600">Browse available tests</p>
+                <p className="text-sm text-purple-600">
+                  Browse available tests
+                </p>
               </button>
-              <button 
-                onClick={() => setActiveTab('assignments')}
+              <button
+                onClick={() => setActiveTab("assignments")}
                 className="p-4 text-left bg-orange-50 hover:bg-orange-100 rounded-lg transition-colors border border-orange-200"
               >
                 <ClipboardList className="w-6 h-6 text-orange-600 mb-2" />
@@ -317,9 +354,11 @@ const TeacherDashboard = () => {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold text-gray-900">Student Groups</h2>
-            <p className="text-gray-600">Manage your student groups and assignments</p>
+            <p className="text-gray-600">
+              Manage your student groups and assignments
+            </p>
           </div>
-          <button 
+          <button
             onClick={() => setShowCreateGroupModal(true)}
             className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2"
           >
@@ -331,17 +370,27 @@ const TeacherDashboard = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
           {groups.length > 0 ? (
             groups.map((group) => (
-              <div key={group.id} className="bg-white rounded-xl border border-gray-100 p-6 hover:shadow-lg transition-shadow">
+              <div
+                key={group.id}
+                className="bg-white rounded-xl border border-gray-100 p-6 hover:shadow-lg transition-shadow"
+              >
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <h3 className="font-semibold text-gray-900 mb-2">{group.name}</h3>
-                    <p className="text-sm text-gray-600 mb-3">{group.description}</p>
+                    <h3 className="font-semibold text-gray-900 mb-2">
+                      {group.name}
+                    </h3>
+                    <p className="text-sm text-gray-600 mb-3">
+                      {group.description}
+                    </p>
                   </div>
                   <div className="flex space-x-1">
-                    <button className="p-2 hover:bg-gray-100 rounded">
+                    <button 
+                      onClick={() => handleEditGroup(group)}
+                      className="p-2 hover:bg-gray-100 rounded"
+                    >
                       <Edit className="w-4 h-4 text-gray-400" />
                     </button>
-                    <button 
+                    <button
                       onClick={() => handleDeleteGroup(group.id)}
                       className="p-2 hover:bg-gray-100 rounded"
                     >
@@ -349,7 +398,7 @@ const TeacherDashboard = () => {
                     </button>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center justify-between text-sm">
                   <div className="flex items-center space-x-4">
                     <span className="flex items-center text-gray-600">
@@ -361,7 +410,7 @@ const TeacherDashboard = () => {
                       {formatDate(group.created_at)}
                     </span>
                   </div>
-                  <button 
+                  <button
                     onClick={() => {
                       setSelectedGroupId(group.id);
                       setActiveTab1("groups-detail");
@@ -376,9 +425,13 @@ const TeacherDashboard = () => {
           ) : (
             <div className="col-span-full text-center py-12">
               <Users className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No groups yet</h3>
-              <p className="text-gray-500 mb-4">Create your first student group to get started</p>
-              <button 
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                No groups yet
+              </h3>
+              <p className="text-gray-500 mb-4">
+                Create your first student group to get started
+              </p>
+              <button
                 onClick={() => setShowCreateGroupModal(true)}
                 className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg"
               >
@@ -388,9 +441,9 @@ const TeacherDashboard = () => {
           )}
 
           {activeTab1 === "groups-detail" && selectedGroupId && (
-            <GroupDetails 
-              groupId={selectedGroupId} 
-              onBack={() => setActiveTab1("groups")} 
+            <GroupDetails
+              groupId={selectedGroupId}
+              onBack={() => setActiveTab1("groups")}
             />
           )}
         </div>
@@ -407,9 +460,10 @@ const TeacherDashboard = () => {
       );
     }
 
-    const filteredTests = tests.filter(test => 
-      test.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      test.description.toLowerCase().includes(searchQuery.toLowerCase())
+    const filteredTests = tests.filter(
+      (test) =>
+        test.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        test.description.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     return (
@@ -419,7 +473,7 @@ const TeacherDashboard = () => {
             <h2 className="text-2xl font-bold text-gray-900">My Tests</h2>
             <p className="text-gray-600">Create and manage your assessments</p>
           </div>
-          <button 
+          <button
             onClick={() => setShowCreateTestModal(true)}
             className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2"
           >
@@ -455,12 +509,18 @@ const TeacherDashboard = () => {
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <div className="flex items-center space-x-3 mb-2">
-                        <h3 className="font-semibold text-gray-900">{test.title}</h3>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          test.difficulty === 'hard' ? 'text-red-600 bg-red-50' :
-                          test.difficulty === 'medium' ? 'text-yellow-600 bg-yellow-50' :
-                          'text-green-600 bg-green-50'
-                        }`}>
+                        <h3 className="font-semibold text-gray-900">
+                          {test.title}
+                        </h3>
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            test.difficulty === "hard"
+                              ? "text-red-600 bg-red-50"
+                              : test.difficulty === "medium"
+                              ? "text-yellow-600 bg-yellow-50"
+                              : "text-green-600 bg-green-50"
+                          }`}
+                        >
                           {test.difficulty}
                         </span>
                         {test.is_active && (
@@ -477,18 +537,24 @@ const TeacherDashboard = () => {
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <button className="p-2 hover:bg-gray-100 rounded">
-                        <Eye className="w-4 h-4 text-gray-400" />
-                      </button>
-                      <button className="p-2 hover:bg-gray-100 rounded">
+                      <button 
+                        onClick={() => handleEditTest(test)}
+                        className="p-2 hover:bg-gray-100 rounded"
+                        title="Edit Test"
+                      >
                         <Edit className="w-4 h-4 text-gray-400" />
                       </button>
-                      <button className="p-2 hover:bg-gray-100 rounded">
+                      <button 
+                        onClick={() => handleShowAnalytics(test.id)}
+                        className="p-2 hover:bg-gray-100 rounded"
+                        title="View Analytics"
+                      >
                         <BarChart3 className="w-4 h-4 text-gray-400" />
                       </button>
-                      <button 
+                      <button
                         onClick={() => handleDeleteTest(test.id)}
                         className="p-2 hover:bg-gray-100 rounded"
+                        title="Delete Test"
                       >
                         <Trash2 className="w-4 h-4 text-red-400" />
                       </button>
@@ -499,11 +565,15 @@ const TeacherDashboard = () => {
             ) : (
               <div className="text-center py-12">
                 <BookOpen className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No tests found</h3>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  No tests found
+                </h3>
                 <p className="text-gray-500 mb-4">
-                  {searchQuery ? 'No tests match your search' : 'Create your first test to get started'}
+                  {searchQuery
+                    ? "No tests match your search"
+                    : "Create your first test to get started"}
                 </p>
-                <button 
+                <button
                   onClick={() => setShowCreateTestModal(true)}
                   className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg"
                 >
@@ -517,164 +587,22 @@ const TeacherDashboard = () => {
     );
   };
 
-  const AssignmentContent = () => {
-
-  };
-
-  const ProfileContent = () => {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">Profile Settings</h2>
-            <p className="text-gray-600">Manage your account information and preferences</p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Avatar */}
-          <div className="bg-white rounded-xl border border-gray-100 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Profile Picture</h3>
-            <ProfileSettings />
-          </div>
-          {/* Profile Information */}
-          <div className="bg-white rounded-xl border border-gray-100 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Personal Information</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                <input
-                  type="text"
-                  value={user?.first_name + ' ' + user?.last_name || ''}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                  readOnly
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                <input
-                  type="email"
-                  value={user?.email || ''}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                  readOnly
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">User Type</label>
-                <input
-                  type="text"
-                  value={user?.user_type || 'teacher'}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                  readOnly
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Account Statistics */}
-          <div className="bg-white rounded-xl border border-gray-100 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Account Statistics</h3>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <span className="text-sm font-medium text-gray-600">Total Groups</span>
-                <span className="text-lg font-bold text-emerald-600">{dashboardStats?.total_groups || 0}</span>
-              </div>
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <span className="text-sm font-medium text-gray-600">Total Tests</span>
-                <span className="text-lg font-bold text-emerald-600">{dashboardStats?.total_tests || 0}</span>
-              </div>
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <span className="text-sm font-medium text-gray-600">Total Students</span>
-                <span className="text-lg font-bold text-emerald-600">{dashboardStats?.total_students || 0}</span>
-              </div>
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <span className="text-sm font-medium text-gray-600">Active Assignments</span>
-                <span className="text-lg font-bold text-emerald-600">{dashboardStats?.active_assignments || 0}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Account Actions */}
-          <div className="bg-white rounded-xl border border-gray-100 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Account Actions</h3>
-            <div className="space-y-3">
-              <button className="w-full text-left p-3 hover:bg-gray-50 rounded-lg border border-gray-200 transition-colors">
-                <div className="flex items-center space-x-3">
-                  <Settings className="w-5 h-5 text-gray-400" />
-                  <div>
-                    <p className="font-medium text-gray-900">Account Settings</p>
-                    <p className="text-sm text-gray-500">Update your account preferences</p>
-                  </div>
-                </div>
-              </button>
-              <button className="w-full text-left p-3 hover:bg-gray-50 rounded-lg border border-gray-200 transition-colors">
-                <div className="flex items-center space-x-3">
-                  <Bell className="w-5 h-5 text-gray-400" />
-                  <div>
-                    <p className="font-medium text-gray-900">Notification Preferences</p>
-                    <p className="text-sm text-gray-500">Manage your notification settings</p>
-                  </div>
-                </div>
-              </button>
-              <button 
-                onClick={logout}
-                className="w-full text-left p-3 hover:bg-red-50 rounded-lg border border-red-200 transition-colors"
-              >
-                <div className="flex items-center space-x-3">
-                  <LogOut className="w-5 h-5 text-red-400" />
-                  <div>
-                    <p className="font-medium text-red-900">Sign Out</p>
-                    <p className="text-sm text-red-500">Sign out of your account</p>
-                  </div>
-                </div>
-              </button>
-            </div>
-          </div>
-
-          {/* Recent Activity */}
-          <div className="bg-white rounded-xl border border-gray-100 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
-            <div className="space-y-3">
-              {dashboardStats?.recent_attempts?.length > 0 ? (
-                dashboardStats.recent_attempts.slice(0, 3).map((attempt) => (
-                  <div key={attempt.id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                    <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-900">{attempt.student_name}</p>
-                      <p className="text-xs text-gray-500">{attempt.test_title}</p>
-                    </div>
-                    <span className="text-xs text-gray-400">
-                      {formatDate(attempt.started_at)}
-                    </span>
-                  </div>
-                ))
-              ) : (
-                <div className="text-center py-4 text-gray-500">
-                  <Clock className="w-8 h-8 mx-auto mb-2 text-gray-300" />
-                  <p className="text-sm">No recent activity</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
+  const AssignmentContent = () => {};
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'dashboard':
+      case "dashboard":
         return <DashboardContent />;
-      case 'groups':
+      case "groups":
         return <GroupsContent />;
-      case 'tests':
+      case "tests":
         return <TestsContent />;
-      case 'assignments':
+      case "assignments":
         return <AssignmentsPage />;
-      case 'library':
-        return <LibraryPage/>;
-      case 'profile':
-        return <ProfileContent />;
+      case "library":
+        return <LibraryPage />;
+      case "profile":
+        return <ProfileSettings />;
       default:
         return <DashboardContent />;
     }
@@ -685,8 +613,8 @@ const TeacherDashboard = () => {
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
           <div className="text-red-600 mb-2">⚠️ Error loading data</div>
-          <button 
-            onClick={() => window.location.reload()} 
+          <button
+            onClick={() => window.location.reload()}
             className="text-emerald-600 hover:text-emerald-700"
           >
             Retry
@@ -708,49 +636,86 @@ const TeacherDashboard = () => {
               <input
                 type="text"
                 placeholder="Search..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 w-96"
               />
             </div>
             <div className="flex items-center space-x-4">
               <NotificationBell />
               <button
-                onClick={() => setActiveTab('profile')}
-                className="w-9 h-9 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center hover:opacity-90 transition-opacity"
+                onClick={() => setActiveTab("profile")}
+                className="w-9 h-9 bg-emerald-600 rounded-full flex items-center justify-center hover:bg-emerald-700 transition-colors"
+                title="Profile Settings"
               >
-                {user?.profile_picture ? (
-                  <img src={user.profile_picture} alt="avatar" className="w-full h-full object-cover" />
-                ) : (
-                  <span className="text-emerald-600 font-medium text-sm">
-                    {user?.first_name?.[0] || user?.username?.[0] || 'T'}
-                  </span>
-                )}
+                <span className="text-white font-medium text-sm">
+                  {user?.first_name?.[0] || user?.username?.[0] || "T"}
+                </span>
               </button>
             </div>
           </div>
         </header>
 
-        <main className="p-6">
-          {renderContent()}
-        </main>
+        <main className="p-6">{renderContent()}</main>
       </div>
 
       {/* Modals */}
       {showCreateGroupModal && (
-        <CreateGroupModal 
-          onClose={() => setShowCreateGroupModal(false)} 
+        <CreateGroupModal
+          onClose={() => setShowCreateGroupModal(false)}
           onSuccess={() => {
             setShowCreateGroupModal(false);
             fetchGroups();
           }}
         />
       )}
-      
+
+      {showEditGroupModal && editingGroup && (
+        <EditGroupModal
+          group={editingGroup}
+          onClose={() => {
+            setShowEditGroupModal(false);
+            setEditingGroup(null);
+          }}
+          onSuccess={() => {
+            setShowEditGroupModal(false);
+            setEditingGroup(null);
+            fetchGroups();
+          }}
+        />
+      )}
+
       {showCreateTestModal && (
-        <CreateTestModal 
-          onClose={() => setShowCreateTestModal(false)} 
+        <CreateTestModal
+          onClose={() => setShowCreateTestModal(false)}
           onSuccess={() => {
             setShowCreateTestModal(false);
             fetchTests();
+          }}
+        />
+      )}
+
+      {showEditTestModal && editingTest && (
+        <EditTestModal
+          test={editingTest}
+          onClose={() => {
+            setShowEditTestModal(false);
+            setEditingTest(null);
+          }}
+          onSuccess={() => {
+            setShowEditTestModal(false);
+            setEditingTest(null);
+            fetchTests();
+          }}
+        />
+      )}
+
+      {showTestAnalytics && analyticsTestId && (
+        <TestAnalyticsModal
+          testId={analyticsTestId}
+          onClose={() => {
+            setShowTestAnalytics(false);
+            setAnalyticsTestId(null);
           }}
         />
       )}
@@ -759,4 +724,3 @@ const TeacherDashboard = () => {
 };
 
 export default TeacherDashboard;
-
