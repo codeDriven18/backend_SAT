@@ -11,7 +11,7 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 
 
 ALLOWED_HOSTS = [
-    'https://api.4prepsat.com/',
+    'api.4prepsat.com/',
     'localhost',
     'teacher.4prepsat.com',
     'student.4prepsat.com',
