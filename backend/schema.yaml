@@ -87,6 +87,33 @@ paths:
                     example:
                       error: Invalid credentials
           description: ''
+  /api/auth/token/:
+    post:
+      operationId: api_auth_token_create
+      description: |-
+        Takes a set of user credentials and returns an access and refresh JSON web
+        token pair to prove the authentication of those credentials.
+      tags:
+      - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenObtainPair'
+          description: ''
   /api/auth/token/refresh/:
     post:
       operationId: api_auth_token_refresh_create
@@ -268,7 +295,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: string
+          type: integer
+        description: A unique integer value identifying this student test attempt.
         required: true
       tags:
       - Other
@@ -345,6 +373,8 @@ paths:
   /api/student/test/{test_id}/section/{section_id}/start/:
     post:
       operationId: api_student_test_section_start_create
+      description: Start or resume a section attempt for the current test attempt.
+      summary: Start Section Attempt
       parameters:
       - in: path
         name: section_id
@@ -362,7 +392,12 @@ paths:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /api/student/test/{test_id}/section/{section_id}/questions/:
     get:
       operationId: api_student_test_section_questions_retrieve
@@ -418,6 +453,8 @@ paths:
   /api/student/test/{test_id}/submit-answer/:
     post:
       operationId: api_student_test_submit_answer_create
+      description: Submit an answer for a single question (MCQ or math_free).
+      summary: Submit single answer
       parameters:
       - in: path
         name: test_id
@@ -426,11 +463,30 @@ paths:
         required: true
       tags:
       - Student Tests
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: {}
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              additionalProperties: {}
+          multipart/form-data:
+            schema:
+              type: object
+              additionalProperties: {}
       security:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /api/student/test/{test_id}/section/{section_id}/answers/:
     post:
       operationId: api_student_test_section_answers_create
@@ -494,6 +550,8 @@ paths:
   /api/student/test/{test_id}/section/{section_id}/complete/:
     post:
       operationId: api_student_test_section_complete_create
+      description: Complete the current section and optionally return next section.
+      summary: Complete section
       parameters:
       - in: path
         name: section_id
@@ -511,10 +569,17 @@ paths:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /api/student/test/{test_id}/complete/:
     post:
       operationId: api_student_test_complete_create
+      description: Finalize the test attempt and compute totals.
+      summary: Complete test
       parameters:
       - in: path
         name: test_id
@@ -527,10 +592,17 @@ paths:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /api/student/test/{test_id}/results/:
     get:
       operationId: api_student_test_results_retrieve
+      description: Retrieve aggregated test results for a completed attempt.
+      summary: Get test results
       parameters:
       - in: path
         name: test_id
@@ -538,12 +610,17 @@ paths:
           type: integer
         required: true
       tags:
-      - Student Tests
+      - Student Results
       security:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /api/student/test/{test_id}/review/:
     get:
       operationId: api_student_test_review_retrieve
@@ -561,7 +638,12 @@ paths:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /api/teacher/tests/:
     get:
       operationId: api_teacher_tests_list
@@ -628,37 +710,6 @@ paths:
       responses:
         '204':
           description: No response body
-    patch:
-      operationId: api_teacher_tests_partial_update
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this test group.
-        required: true
-      tags:
-      - Teacher Tests
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedTestGroupRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedTestGroupRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedTestGroupRequest'
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TestGroup'
-          description: ''
     get:
       operationId: api_teacher_tests_retrieve
       summary: Get test by ID
@@ -704,6 +755,37 @@ paths:
             schema:
               $ref: '#/components/schemas/TestGroupRequest'
         required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestGroup'
+          description: ''
+    patch:
+      operationId: api_teacher_tests_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this test group.
+        required: true
+      tags:
+      - Teacher Tests
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedTestGroupRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedTestGroupRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedTestGroupRequest'
       security:
       - jwtAuth: []
       responses:
@@ -778,37 +860,6 @@ paths:
       responses:
         '204':
           description: No response body
-    patch:
-      operationId: api_teacher_groups_partial_update
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this student group.
-        required: true
-      tags:
-      - Teacher Groups
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedStudentGroupRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedStudentGroupRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedStudentGroupRequest'
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StudentGroup'
-          description: ''
     get:
       operationId: api_teacher_groups_retrieve
       parameters:
@@ -852,6 +903,37 @@ paths:
             schema:
               $ref: '#/components/schemas/StudentGroupRequest'
         required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudentGroup'
+          description: ''
+    patch:
+      operationId: api_teacher_groups_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this student group.
+        required: true
+      tags:
+      - Teacher Groups
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedStudentGroupRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedStudentGroupRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedStudentGroupRequest'
       security:
       - jwtAuth: []
       responses:
@@ -996,37 +1078,6 @@ paths:
       responses:
         '204':
           description: No response body
-    patch:
-      operationId: api_teacher_assignments_partial_update
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this test assignment.
-        required: true
-      tags:
-      - Teacher Assignments
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedTestAssignmentRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedTestAssignmentRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedTestAssignmentRequest'
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TestAssignment'
-          description: ''
     get:
       operationId: api_teacher_assignments_retrieve
       parameters:
@@ -1070,6 +1121,37 @@ paths:
             schema:
               $ref: '#/components/schemas/TestAssignmentRequest'
         required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestAssignment'
+          description: ''
+    patch:
+      operationId: api_teacher_assignments_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this test assignment.
+        required: true
+      tags:
+      - Teacher Assignments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedTestAssignmentRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedTestAssignmentRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedTestAssignmentRequest'
       security:
       - jwtAuth: []
       responses:
@@ -1265,37 +1347,6 @@ paths:
       responses:
         '204':
           description: No response body
-    patch:
-      operationId: api_teacher_questions_partial_update
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this question.
-        required: true
-      tags:
-      - Other
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedQuestionRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedQuestionRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedQuestionRequest'
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Question'
-          description: ''
     get:
       operationId: api_teacher_questions_retrieve
       parameters:
@@ -1338,6 +1389,37 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/QuestionRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Question'
+          description: ''
+    patch:
+      operationId: api_teacher_questions_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this question.
+        required: true
+      tags:
+      - Other
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedQuestionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedQuestionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedQuestionRequest'
       security:
       - jwtAuth: []
       responses:
@@ -2008,7 +2090,10 @@ components:
           type: string
           nullable: true
         correct_answers:
-          type: string
+          type: array
+          items:
+            type: string
+          nullable: true
           readOnly: true
         is_correct:
           type: boolean
@@ -2088,7 +2173,7 @@ components:
             $ref: '#/components/schemas/StudentBasic'
           readOnly: true
         student_count:
-          type: string
+          type: integer
           readOnly: true
         created_at:
           type: string
@@ -2420,6 +2505,32 @@ components:
       required:
       - name
       - questions
+    TokenObtainPair:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+          readOnly: true
+      required:
+      - access
+      - refresh
+    TokenObtainPairRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          writeOnly: true
+          minLength: 1
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - password
+      - username
     TokenRefresh:
       type: object
       properties:

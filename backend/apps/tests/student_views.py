@@ -137,6 +137,7 @@ class StartTestView(APIView):
                 description='ID of the test to start'
             )
         ],
+        request=EmptySerializer,
         responses={
             200: {
                 'description': 'Test started successfully',
@@ -238,6 +239,13 @@ class StartTestView(APIView):
 class StartSectionView(APIView):
     permission_classes = [IsAuthenticated]
     
+    @extend_schema(
+        tags=['Student Tests'],
+        summary='Start Section Attempt',
+        description='Start or resume a section attempt for the current test attempt.',
+        request=None,
+        responses={200: OpenApiTypes.OBJECT}
+    )
     def post(self, request, test_id, section_id):
         test = get_object_or_404(TestGroup, id=test_id)
         section = get_object_or_404(TestSection, id=section_id, test_group=test)
@@ -348,6 +356,13 @@ class GetSectionQuestionsView(APIView):
 class SubmitAnswerView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        tags=['Student Tests'],
+        summary='Submit single answer',
+        description='Submit an answer for a single question (MCQ or math_free).',
+        request=OpenApiTypes.OBJECT,
+        responses={200: OpenApiTypes.OBJECT}
+    )
     def post(self, request):
         test_attempt_id = request.data.get("test_attempt_id")
         question_id = request.data.get("question_id")
@@ -395,6 +410,13 @@ class SubmitAnswerView(APIView):
 class CompleteSectionView(APIView):
     permission_classes = [IsAuthenticated]
     
+    @extend_schema(
+        tags=['Student Tests'],
+        summary='Complete section',
+        description='Complete the current section and optionally return next section.',
+        request=None,
+        responses={200: OpenApiTypes.OBJECT}
+    )
     def post(self, request, test_id, section_id):
         test = get_object_or_404(TestGroup, id=test_id)
         section = get_object_or_404(TestSection, id=section_id, test_group=test)
@@ -488,6 +510,13 @@ class CompleteSectionView(APIView):
 class CompleteTestView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        tags=['Student Tests'],
+        summary='Complete test',
+        description='Finalize the test attempt and compute totals.',
+        request=None,
+        responses={200: OpenApiTypes.OBJECT}
+    )
     def post(self, request, test_id):
         attempt = get_object_or_404(
             StudentTestAttempt,
@@ -564,6 +593,12 @@ class CompleteTestView(APIView):
 class TestResultsView(APIView):
     permission_classes = [IsAuthenticated]
     
+    @extend_schema(
+        tags=['Student Results'],
+        summary='Get test results',
+        description='Retrieve aggregated test results for a completed attempt.',
+        responses={200: OpenApiTypes.OBJECT}
+    )
     def get(self, request, test_id):
         test = get_object_or_404(TestGroup, id=test_id)
         attempt = get_object_or_404(StudentTestAttempt, 
@@ -598,6 +633,7 @@ class TestReviewView(APIView):
         tags=['Student Tests'],
         summary='Get detailed test review',
         description='Includes all sections, questions, choices, and student answers.',
+        responses={200: OpenApiTypes.OBJECT}
     )
     def get(self, request, test_id):
         attempt = get_object_or_404(
@@ -686,8 +722,14 @@ class StudentTestAttemptViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = StudentTestAttemptSerializer
     
     def get_queryset(self):
-        if self.request.user.user_type == 'student':
-            return StudentTestAttempt.objects.filter(student=self.request.user).order_by('-started_at')
+        # Guard for schema generation and anonymous users
+        if getattr(self, 'swagger_fake_view', False):
+            return StudentTestAttempt.objects.none()
+        user = getattr(self.request, 'user', None)
+        if not user or not getattr(user, 'is_authenticated', False):
+            return StudentTestAttempt.objects.none()
+        if getattr(user, 'user_type', None) == 'student':
+            return StudentTestAttempt.objects.filter(student=user).order_by('-started_at')
         return StudentTestAttempt.objects.none()
 
 class SubmitBulkAnswersView(APIView):

@@ -11,7 +11,7 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 
 
 ALLOWED_HOSTS = [
-    'api.4prepsat.com/',
+    'api.4prepsat.com',
     'localhost',
     'teacher.4prepsat.com',
     'student.4prepsat.com',
@@ -73,8 +73,6 @@ WSGI_APPLICATION = 'eduplatform.wsgi.application'
 
 
 # Database settings
-
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -86,6 +84,22 @@ DATABASES = {
         'CONN_MAX_AGE': 600,
     }
 }
+
+# Prefer DATABASE_URL if provided (supports postgres, mysql, sqlite, etc.)
+DATABASE_URL = config('DATABASE_URL', default=None)
+if DATABASE_URL:
+    DATABASES['default'] = dj_database_url.parse(
+        DATABASE_URL,
+        conn_max_age=600,
+        ssl_require=not DEBUG,
+    )
+
+# Optional: when developing locally with no DB available, allow SQLite fallback if DEBUG=True
+if DEBUG and not DATABASE_URL:
+    DATABASES['default'] = {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
 
 
 AUTH_PASSWORD_VALIDATORS = [

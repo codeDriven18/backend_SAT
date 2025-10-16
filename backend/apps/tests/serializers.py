@@ -3,6 +3,10 @@ from drf_spectacular.utils import extend_schema_serializer, OpenApiExample, exte
 from .models import *
 from apps.users.models import User
 
+class EmptySerializer(serializers.Serializer):
+    """Minimal serializer for views that only need schema scaffolding."""
+    pass
+
 class ChoiceSerializer(serializers.ModelSerializer):
     # id = serializers.IntegerField()
     choice_text = serializers.CharField()
@@ -332,13 +336,14 @@ class StudentBasicSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'username', 'first_name', 'last_name', 'full_name']
     
+    @extend_schema_field(serializers.CharField())
     def get_full_name(self, obj):
         return f"{obj.first_name} {obj.last_name}".strip() or obj.username
 
 class StudentGroupSerializer(serializers.ModelSerializer):
     students = StudentBasicSerializer(many=True, read_only=True)
     teacher_name = serializers.CharField(source='teacher.username', read_only=True)
-    student_count = serializers.ReadOnlyField()
+    student_count = serializers.IntegerField(read_only=True)
     
     class Meta:
         model = StudentGroup
@@ -439,6 +444,7 @@ class StudentAnswerOutSerializer(serializers.ModelSerializer):
             'is_correct', 'answered_at'
         ]
 
+    @extend_schema_field(serializers.ListField(child=serializers.CharField(), allow_null=True))
     def get_correct_answers(self, obj):
         if obj.question.question_type == "math_free":
             return obj.question.correct_answers or []
