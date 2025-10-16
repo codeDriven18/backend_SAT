@@ -127,7 +127,7 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
+        'rest_framework.permissions.AllowAny',
     ],
     'DEFAULT_SCHEMA_CLASS': 'eduplatform.schema.CustomAutoSchema',  # Add this line
     'DEFAULT_FILTER_BACKENDS': [
@@ -145,10 +145,10 @@ SIMPLE_JWT = {
 }
 
 CORS_ALLOWED_ORIGINS = [
-    "https://api.4prepsat.com",
-    "https://student.4prepsat.com",
-    "https://teacher.4prepsat.com",
-    "https://backend-sato.onrender.com",
+    "api.4prepsat.com",
+    "student.4prepsat.com",
+    "teacher.4prepsat.com",
+    "backend-sato.onrender.com",
     "http://localhost:3000",
     "http://localhost:3001",
     "http://127.0.0.1:3000",
