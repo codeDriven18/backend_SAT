@@ -145,10 +145,10 @@ SIMPLE_JWT = {
 }
 
 CORS_ALLOWED_ORIGINS = [
-    "api.4prepsat.com",
-    "student.4prepsat.com",
-    "teacher.4prepsat.com",
-    "backend-sato.onrender.com",
+    "http://api.4prepsat.com",
+    "http://student.4prepsat.com",
+    "http://teacher.4prepsat.com",
+    "http://backend-sato.onrender.com",
     "http://localhost:3000",
     "http://localhost:3001",
     "http://127.0.0.1:3000",
