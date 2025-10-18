@@ -59,13 +59,25 @@ class UserLoginSerializer(serializers.Serializer):
         return attrs
 
 class UserSerializer(serializers.ModelSerializer):
-    profile_picture = serializers.ImageField(read_only=True)
+    profile_picture = serializers.SerializerMethodField()
+    
     class Meta:
         model = User
         fields = (
             'id', 'username', 'email', 'first_name', 'last_name',
             'user_type', 'phone_number', 'profile_picture', 'created_at'
         )
+    
+    def get_profile_picture(self, obj):
+        """Return the full URL for the profile picture"""
+        request = self.context.get('request')
+        if obj.profile_picture:
+            # Return the URL path
+            if request:
+                return request.build_absolute_uri(obj.profile_picture.url)
+            else:
+                return obj.profile_picture.url
+        return None
 
 
 class ProfilePictureUploadSerializer(serializers.Serializer):
